@@ -1,0 +1,772 @@
+---
+title: "Complete Modding Example"
+description: "Follow a step-by-step example of creating a comprehensive Construct mod from start to finish"
+---
+
+# Complete Modding Example: Smart Home System
+
+This guide walks you through creating a complete "Smart Home" mod for Construct that demonstrates all three frameworks working together. The mod will include automated lighting, security systems, and environmental controls.
+
+## Overview
+
+Our Smart Home mod will include:
+- **Automated Lights** that turn on/off based on time and motion
+- **Security Cameras** with motion detection
+- **Smart Doors** that can be controlled remotely
+- **Environmental Sensors** for temperature and humidity
+- **Central Control Panel** for managing the entire system
+
+## Project Structure
+
+```
+SmartHomeMod/
+├── init.lua                 # Main mod initialization
+├── Blocks/
+│   ├── SmartLight.lua       # Automated lighting block
+│   ├── SecurityCamera.lua   # Motion-detecting camera
+│   ├── SmartDoor.lua        # Remote-controlled door
+│   └── EnvironmentalSensor.lua # Climate monitoring
+├── UI/
+│   ├── ControlPanel.lua     # Main control interface
+│   └── SettingsPanel.lua    # Configuration panel
+├── Services/
+│   ├── HomeAutomation.lua   # Core automation logic
+│   └── SecuritySystem.lua   # Security management
+└── Config/
+    └── DefaultSettings.lua  # Default configurations
+```
+
+## Step 1: Mod Initialization
+
+```lua
+-- init.lua
+local vision = require(ReplicatedStorage.Vision)
+local ConstructAPI = require(ReplicatedStorage.Shared.Locations)
+
+-- Initialize Vision framework
+vision:start(true) -- Enable logging for development
+
+-- Get references to core systems
+local atom = ConstructAPI:Get("Atom")
+local notifications = ConstructAPI:Get("NotificationsService")
+
+print("🤖 Smart Home Mod initializing...")
+
+-- Register block functionalities
+atom:AddFunctionality("SmartLight", script.Blocks.SmartLight)
+atom:AddFunctionality("SecurityCamera", script.Blocks.SecurityCamera)
+atom:AddFunctionality("SmartDoor", script.Blocks.SmartDoor)
+atom:AddFunctionality("EnvironmentalSensor", script.Blocks.EnvironmentalSensor)
+
+-- Create block configurations
+local lightConfig = atom:NewConfigTemplate("SmartLight")
+lightConfig:AddPropertyValue("Brightness", 1.0)
+lightConfig:AddPropertyValue("Color", Color3.fromRGB(255, 255, 255))
+lightConfig:AddPropertyValue("AutoMode", true)
+lightConfig:AddPropertyValue("MotionSensitivity", 0.7)
+
+local cameraConfig = atom:NewConfigTemplate("SecurityCamera")
+cameraConfig:AddPropertyValue("DetectionRange", 20)
+cameraConfig:AddPropertyValue("RecordingEnabled", true)
+cameraConfig:AddPropertyValue("NightVision", false)
+
+local doorConfig = atom:NewConfigTemplate("SmartDoor")
+doorConfig:AddPropertyValue("Locked", false)
+doorConfig:AddPropertyValue("AutoLock", true)
+doorConfig:AddPropertyValue("AccessCode", "1234")
+
+local sensorConfig = atom:NewConfigTemplate("EnvironmentalSensor")
+sensorConfig:AddPropertyValue("UpdateInterval", 30)
+sensorConfig:AddPropertyValue("TemperatureThreshold", 25)
+sensorConfig:AddPropertyValue("HumidityThreshold", 60)
+
+-- Register services
+ConstructAPI:Register("SmartHome_Core", require(script.Services.HomeAutomation))
+ConstructAPI:Register("SmartHome_Security", require(script.Services.SecuritySystem))
+
+-- Initialize UI
+require(script.UI.ControlPanel):Init()
+require(script.UI.SettingsPanel):Init()
+
+-- Load default settings
+local defaultSettings = require(script.Config.DefaultSettings)
+ConstructAPI:Register("SmartHome_Settings", defaultSettings)
+
+print("✅ Smart Home Mod loaded successfully!")
+notifications:Show("Smart Home", "System initialized and ready!", 3)
+```
+
+## Step 2: Core Services
+
+### Home Automation Service
+
+```lua
+-- Services/HomeAutomation.lua
+local HomeAutomation = {}
+
+local ConstructAPI = require(ReplicatedStorage.Shared.Locations)
+local atom = ConstructAPI:Get("Atom")
+
+function HomeAutomation:Init()
+    self._activeHomes = {}
+    self._scheduledTasks = {}
+
+    -- Set up daily schedule
+    self:SetupDailySchedule()
+
+    print("🏠 Home Automation service initialized")
+end
+
+function HomeAutomation:SetupDailySchedule()
+    -- Turn on lights at sunset
+    self:ScheduleTask("18:00", function()
+        self:ControlLights("all", "on", {brightness = 0.8})
+    end)
+
+    -- Turn off lights at bedtime
+    self:ScheduleTask("22:00", function()
+        self:ControlLights("all", "off")
+    end)
+
+    -- Lock all doors at night
+    self:ScheduleTask("23:00", function()
+        self:LockAllDoors()
+    end)
+end
+
+function HomeAutomation:ScheduleTask(timeString, callback)
+    -- Parse time string (HH:MM format)
+    local hour, minute = timeString:match("(%d+):(%d+)")
+    hour = tonumber(hour)
+    minute = tonumber(minute)
+
+    table.insert(self._scheduledTasks, {
+        hour = hour,
+        minute = minute,
+        callback = callback,
+        executed = false
+    })
+end
+
+function HomeAutomation:UpdateSchedule()
+    local currentTime = os.date("*t")
+
+    for _, task in ipairs(self._scheduledTasks) do
+        if currentTime.hour == task.hour and currentTime.min == task.minute and not task.executed then
+            task.callback()
+            task.executed = true
+        elseif currentTime.hour ~= task.hour or currentTime.min ~= task.minute then
+            task.executed = false -- Reset for next day
+        end
+    end
+end
+
+function HomeAutomation:ControlLights(identifier, action, options)
+    options = options or {}
+
+    -- Find all smart lights in the build
+    local build = workspace:FindFirstChild(identifier .. "_Build")
+    if not build then return end
+
+    for _, block in ipairs(build:GetChildren()) do
+        if block.Name == "SmartLight" then
+            if action == "on" then
+                atom:ActivateFunction(block, "SmartLight", "TurnOn", build, identifier, options)
+            elseif action == "off" then
+                atom:ActivateFunction(block, "SmartLight", "TurnOff", build, identifier)
+            end
+        end
+    end
+end
+
+function HomeAutomation:LockAllDoors(identifier)
+    local build = workspace:FindFirstChild(identifier .. "_Build")
+    if not build then return end
+
+    for _, block in ipairs(build:GetChildren()) do
+        if block.Name == "SmartDoor" then
+            atom:ActivateFunction(block, "SmartDoor", "Lock", build, identifier)
+        end
+    end
+end
+
+function HomeAutomation:GetHomeStatus(identifier)
+    local build = workspace:FindFirstChild(identifier .. "_Build")
+    if not build then return nil end
+
+    local status = {
+        lights = {},
+        doors = {},
+        sensors = {},
+        cameras = {}
+    }
+
+    for _, block in ipairs(build:GetChildren()) do
+        local nid = atom.GetNID(block)
+        local config = atom:GetBlockConfig(block)
+
+        if block.Name == "SmartLight" then
+            table.insert(status.lights, {
+                id = nid,
+                active = atom.GetRuntimeValue(identifier, nid, "Active"),
+                brightness = config.Brightness
+            })
+        elseif block.Name == "SmartDoor" then
+            table.insert(status.doors, {
+                id = nid,
+                locked = config.Locked,
+                open = atom.GetRuntimeValue(identifier, nid, "Open")
+            })
+        elseif block.Name == "EnvironmentalSensor" then
+            table.insert(status.sensors, {
+                id = nid,
+                temperature = atom.GetRuntimeValue(identifier, nid, "Temperature"),
+                humidity = atom.GetRuntimeValue(identifier, nid, "Humidity")
+            })
+        elseif block.Name == "SecurityCamera" then
+            table.insert(status.cameras, {
+                id = nid,
+                recording = config.RecordingEnabled,
+                motionDetected = atom.GetRuntimeValue(identifier, nid, "MotionDetected")
+            })
+        end
+    end
+
+    return status
+end
+
+-- Update loop
+RunService.Heartbeat:Connect(function()
+    HomeAutomation:UpdateSchedule()
+end)
+
+return HomeAutomation
+```
+
+### Security System Service
+
+```lua
+-- Services/SecuritySystem.lua
+local SecuritySystem = {}
+
+local ConstructAPI = require(ReplicatedStorage.Shared.Locations)
+local atom = ConstructAPI:Get("Atom")
+local notifications = ConstructAPI:Get("NotificationsService")
+
+function SecuritySystem:Init()
+    self._alerts = {}
+    self._securityLevel = "normal" -- normal, alert, lockdown
+
+    -- Set up security monitoring
+    self:SetupMonitoring()
+
+    print("🔒 Security System initialized")
+end
+
+function SecuritySystem:SetupMonitoring()
+    -- Monitor for security events
+    local clientSignal = ConstructAPI:Get("Client")
+    clientSignal:Connect(function(eventType, data)
+        if eventType == "MotionDetected" then
+            self:HandleMotionDetection(data)
+        elseif eventType == "DoorForced" then
+            self:HandleDoorBreach(data)
+        end
+    end)
+end
+
+function SecuritySystem:HandleMotionDetection(data)
+    local camera = data.camera
+    local location = data.location
+    local timestamp = data.timestamp
+
+    -- Log the detection
+    table.insert(self._alerts, {
+        type = "motion",
+        camera = camera,
+        location = location,
+        timestamp = timestamp,
+        severity = "medium"
+    })
+
+    -- Notify owner
+    notifications:Show("Security Alert", "Motion detected at " .. location, 10, "warning")
+
+    -- If in high security mode, sound alarm
+    if self._securityLevel == "alert" then
+        self:TriggerAlarm(location)
+    end
+end
+
+function SecuritySystem:HandleDoorBreach(data)
+    local door = data.door
+    local location = data.location
+    local method = data.method -- "forced", "wrong_code", etc.
+
+    -- Critical alert
+    table.insert(self._alerts, {
+        type = "breach",
+        door = door,
+        location = location,
+        method = method,
+        timestamp = os.time(),
+        severity = "high"
+    })
+
+    -- Immediate lockdown
+    self:SetSecurityLevel("lockdown")
+
+    notifications:Show("SECURITY BREACH", "Door breach detected at " .. location .. "!", 0, "error")
+end
+
+function SecuritySystem:TriggerAlarm(location)
+    -- Find all security cameras in the area
+    local build = workspace:FindFirstChild(location .. "_Build")
+    if not build then return end
+
+    for _, block in ipairs(build:GetChildren()) do
+        if block.Name == "SecurityCamera" then
+            atom:ActivateFunction(block, "SecurityCamera", "SoundAlarm", build, location)
+        end
+    end
+end
+
+function SecuritySystem:SetSecurityLevel(level)
+    self._securityLevel = level
+
+    local message = "Security level changed to: " .. level
+    local color = "info"
+
+    if level == "alert" then
+        color = "warning"
+    elseif level == "lockdown" then
+        color = "error"
+        -- Lock all doors
+        local homeAutomation = ConstructAPI:Get("SmartHome_Core")
+        homeAutomation:LockAllDoors("all")
+    end
+
+    notifications:Show("Security System", message, 5, color)
+end
+
+function SecuritySystem:GetSecurityStatus()
+    return {
+        level = self._securityLevel,
+        alerts = self._alerts,
+        lastAlert = self._alerts[#self._alerts]
+    }
+end
+
+function SecuritySystem:ClearAlerts()
+    self._alerts = {}
+    notifications:Show("Security System", "All alerts cleared", 3, "success")
+end
+
+return SecuritySystem
+```
+
+## Step 3: Block Implementations
+
+### Smart Light Block
+
+```lua
+-- Blocks/SmartLight.lua
+local SmartLight = {}
+
+function SmartLight.LaunchedReplicated(block, build, identifier, config, atom)
+    -- Create light component
+    local light = Instance.new("PointLight")
+    light.Color = config.Color
+    light.Brightness = config.Brightness
+    light.Range = 15
+    light.Enabled = false
+    light.Parent = block
+
+    -- Create motion sensor zone
+    local sensor = Instance.new("Part")
+    sensor.Size = Vector3.new(10, 10, 10)
+    sensor.Anchored = true
+    sensor.CanCollide = false
+    sensor.Transparency = 1
+    sensor.Position = block.Position
+    sensor.Parent = block
+
+    return {light, sensor}
+end
+
+function SmartLight.LaunchedServer(block, build, identifier, config, atom)
+    local sensor = block:FindFirstChild("Part") -- Motion sensor
+
+    local motionConnection = sensor.Touched:Connect(function(hit)
+        if hit.Parent:FindFirstChild("Humanoid") and config.AutoMode then
+            local isActive = atom.GetRuntimeValue(identifier, atom.GetNID(block), "Active")
+            if not isActive then
+                atom:ActivateFunction(block, "SmartLight", "TurnOn", build, identifier, {temporary = true})
+            end
+        end
+    end)
+
+    return motionConnection
+end
+
+function SmartLight.LaunchedClient(block, build, identifier, config, atom)
+    -- Client-side visual effects
+    local light = block:FindFirstChild("PointLight")
+
+    -- Smooth light transitions
+    local tweenService = game:GetService("TweenService")
+
+    return function()
+        -- Cleanup function
+        if light then
+            tweenService:Create(light, TweenInfo.new(0.5), {Brightness = 0}):Play()
+        end
+    end
+end
+
+function SmartLight.TurnOn(block, build, identifier, config, atom, options)
+    options = options or {}
+
+    local light = block:FindFirstChild("PointLight")
+    if light then
+        light.Enabled = true
+
+        if options.brightness then
+            light.Brightness = options.brightness
+        end
+
+        atom.SetRuntimeBlockValue(identifier, atom.GetNID(block), "Active", true)
+
+        -- Auto-turn off after delay if temporary
+        if options.temporary then
+            task.delay(30, function()
+                SmartLight.TurnOff(block, build, identifier, config, atom)
+            end)
+        end
+    end
+end
+
+function SmartLight.TurnOff(block, build, identifier, config, atom)
+    local light = block:FindFirstChild("PointLight")
+    if light then
+        light.Enabled = false
+        atom.SetRuntimeBlockValue(identifier, atom.GetNID(block), "Active", false)
+    end
+end
+
+return SmartLight
+```
+
+### Security Camera Block
+
+```lua
+-- Blocks/SecurityCamera.lua
+local SecurityCamera = {}
+
+function SecurityCamera.LaunchedReplicated(block, build, identifier, config, atom)
+    -- Create camera visualization
+    local cameraModel = Instance.new("Model")
+    cameraModel.Name = "CameraModel"
+
+    local body = Instance.new("Part")
+    body.Size = Vector3.new(1, 1, 2)
+    body.Anchored = true
+    body.Position = block.Position
+    body.BrickColor = BrickColor.new("Black")
+    body.Parent = cameraModel
+
+    local lens = Instance.new("Part")
+    lens.Size = Vector3.new(0.5, 0.5, 0.5)
+    lens.Shape = Enum.PartType.Ball
+    lens.Anchored = true
+    lens.Position = block.Position + Vector3.new(0, 0, 1)
+    lens.BrickColor = BrickColor.new("Really black")
+    lens.Parent = cameraModel
+
+    cameraModel.Parent = block
+
+    return cameraModel
+end
+
+function SecurityCamera.LaunchedServer(block, build, identifier, config, atom)
+    -- Motion detection zone
+    local detectionZone = Instance.new("Part")
+    detectionZone.Size = Vector3.new(config.DetectionRange * 2, 5, config.DetectionRange * 2)
+    detectionZone.Anchored = true
+    detectionZone.CanCollide = false
+    detectionZone.Transparency = 1
+    detectionZone.Position = block.Position - Vector3.new(0, 2.5, 0)
+    detectionZone.Parent = block
+
+    local motionConnection = detectionZone.Touched:Connect(function(hit)
+        if hit.Parent:FindFirstChild("Humanoid") then
+            local motionDetected = atom.GetRuntimeValue(identifier, atom.GetNID(block), "MotionDetected")
+            if not motionDetected then
+                atom.SetRuntimeBlockValue(identifier, atom.GetNID(block), "MotionDetected", true)
+
+                -- Notify security system
+                local securitySystem = ConstructAPI:Get("SmartHome_Security")
+                securitySystem:HandleMotionDetection({
+                    camera = atom.GetNID(block),
+                    location = identifier,
+                    timestamp = os.time()
+                })
+
+                -- Reset after 5 seconds
+                task.delay(5, function()
+                    atom.SetRuntimeBlockValue(identifier, atom.GetNID(block), "MotionDetected", false)
+                end)
+            end
+        end
+    end)
+
+    return motionConnection
+end
+
+function SecurityCamera.SoundAlarm(block, build, identifier, config, atom)
+    -- Create alarm sound
+    local sound = Instance.new("Sound")
+    sound.SoundId = "rbxassetid://142700651" -- Alarm sound
+    sound.Volume = 0.5
+    sound.Looped = true
+    sound.Parent = block
+
+    sound:Play()
+
+    -- Stop after 10 seconds
+    task.delay(10, function()
+        sound:Stop()
+        sound:Destroy()
+    end)
+end
+
+return SecurityCamera
+```
+
+## Step 4: User Interface
+
+### Control Panel
+
+```lua
+-- UI/ControlPanel.lua
+local ControlPanel = {}
+
+local ConstructAPI = require(ReplicatedStorage.Shared.Locations)
+local Fusion = ConstructAPI:Get("FusionComponents")
+
+local New, Children, OnEvent, OnChange = Fusion.New, Fusion.Children, Fusion.OnEvent, Fusion.OnChange
+
+function ControlPanel:Init()
+    local gui = ConstructAPI:Get("Gui")
+
+    self.panel = New("Frame")({
+        Name = "SmartHomeControlPanel",
+        Size = UDim2.fromScale(0.4, 0.6),
+        Position = UDim2.fromScale(0.3, 0.2),
+        BackgroundColor3 = Color3.fromRGB(35, 35, 35),
+        Visible = false,
+
+        [Children] = {
+            New("TextLabel")({
+                Text = "🏠 Smart Home Control",
+                Size = UDim2.fromScale(1, 0.1),
+                BackgroundColor3 = Color3.fromRGB(50, 50, 50),
+                TextColor3 = Color3.new(1, 1, 1),
+                TextScaled = true
+            }),
+
+            New("TextButton")({
+                Text = "🏡 Home Status",
+                Size = UDim2.fromScale(0.8, 0.1),
+                Position = UDim2.fromScale(0.1, 0.15),
+                BackgroundColor3 = Color3.fromRGB(70, 70, 70),
+
+                [OnEvent("Activated")] = function()
+                    self:ShowHomeStatus()
+                end
+            }),
+
+            New("TextButton")({
+                Text = "🔒 Security",
+                Size = UDim2.fromScale(0.8, 0.1),
+                Position = UDim2.fromScale(0.1, 0.3),
+                BackgroundColor3 = Color3.fromRGB(70, 70, 70),
+
+                [OnEvent("Activated")] = function()
+                    self:ShowSecurityPanel()
+                end
+            }),
+
+            New("TextButton")({
+                Text = "⚙️ Settings",
+                Size = UDim2.fromScale(0.8, 0.1),
+                Position = UDim2.fromScale(0.1, 0.45),
+                BackgroundColor3 = Color3.fromRGB(70, 70, 70),
+
+                [OnEvent("Activated")] = function()
+                    local settingsPanel = ConstructAPI:Get("SmartHome_SettingsPanel")
+                    settingsPanel:Show()
+                end
+            }),
+
+            New("TextButton")({
+                Text = "❌ Close",
+                Size = UDim2.fromScale(0.8, 0.1),
+                Position = UDim2.fromScale(0.1, 0.8),
+                BackgroundColor3 = Color3.fromRGB(150, 50, 50),
+
+                [OnEvent("Activated")] = function()
+                    self.panel.Visible = false
+                end
+            })
+        }
+    })
+
+    self.panel.Parent = gui
+    ConstructAPI:Register("SmartHome_ControlPanel", self.panel)
+end
+
+function ControlPanel:Show()
+    self.panel.Visible = true
+end
+
+function ControlPanel:ShowHomeStatus()
+    local homeAutomation = ConstructAPI:Get("SmartHome_Core")
+    local status = homeAutomation:GetHomeStatus("player_" .. ConstructAPI:Get("Player").UserId)
+
+    if status then
+        local message = string.format(
+            "🏠 Home Status\n💡 Lights: %d active\n🚪 Doors: %d locked\n📹 Cameras: %d recording\n🌡️ Sensors: %d active",
+            #status.lights,
+            #status.doors,
+            #status.cameras,
+            #status.sensors
+        )
+
+        local notifications = ConstructAPI:Get("NotificationsService")
+        notifications:Show("Home Status", message, 8)
+    end
+end
+
+function ControlPanel:ShowSecurityPanel()
+    local securitySystem = ConstructAPI:Get("SmartHome_Security")
+    local status = securitySystem:GetSecurityStatus()
+
+    local levelColors = {
+        normal = "🟢",
+        alert = "🟡",
+        lockdown = "🔴"
+    }
+
+    local message = string.format(
+        "🔒 Security Status\nLevel: %s %s\nAlerts: %d",
+        levelColors[status.level] or "⚪",
+        status.level,
+        #status.alerts
+    )
+
+    local notifications = ConstructAPI:Get("NotificationsService")
+    notifications:Show("Security Status", message, 8)
+end
+
+return ControlPanel
+```
+
+## Step 5: Configuration
+
+### Default Settings
+
+```lua
+-- Config/DefaultSettings.lua
+return {
+    -- Lighting settings
+    lighting = {
+        autoMode = true,
+        defaultBrightness = 0.8,
+        motionTimeout = 30,
+        scheduleEnabled = true
+    },
+
+    -- Security settings
+    security = {
+        motionDetection = true,
+        autoLock = true,
+        alarmVolume = 0.7,
+        recordingEnabled = true
+    },
+
+    -- Environmental settings
+    environment = {
+        temperatureMonitoring = true,
+        humidityMonitoring = true,
+        updateInterval = 30,
+        alertsEnabled = true
+    },
+
+    -- UI settings
+    ui = {
+        showNotifications = true,
+        controlPanelHotkey = "H",
+        theme = "dark"
+    }
+}
+```
+
+## Step 6: Testing and Deployment
+
+### Test Script
+
+```lua
+-- Test script to validate mod functionality
+local vision = require(ReplicatedStorage.Vision)
+local ConstructAPI = require(ReplicatedStorage.Shared.Locations)
+
+print("🧪 Testing Smart Home Mod...")
+
+-- Test Vision initialization
+vision:start()
+print("✅ Vision initialized")
+
+-- Test Construct API access
+local atom = ConstructAPI:Get("Atom")
+assert(atom, "Atom not available")
+print("✅ Atom system accessible")
+
+-- Test service registration
+local homeAutomation = ConstructAPI:Get("SmartHome_Core")
+assert(homeAutomation, "Home Automation service not registered")
+print("✅ Services registered")
+
+-- Test block configurations
+local lightConfig = atom:GetBlockConfigTemplate("SmartLight")
+assert(lightConfig, "SmartLight config not found")
+print("✅ Block configurations loaded")
+
+-- Test UI initialization
+local controlPanel = ConstructAPI:Get("SmartHome_ControlPanel")
+assert(controlPanel, "Control panel not initialized")
+print("✅ UI components initialized")
+
+print("🎉 All tests passed! Smart Home Mod is ready!")
+```
+
+## Usage Instructions
+
+1. **Installation**: Place the SmartHomeMod folder in your mods directory
+2. **Loading**: The mod loads automatically when the game starts
+3. **Building**: Use the SmartLight, SecurityCamera, SmartDoor, and EnvironmentalSensor blocks
+4. **Control**: Press the designated hotkey (default: H) to open the control panel
+5. **Automation**: The system will automatically manage lighting and security based on the schedule
+
+## Features Summary
+
+- ✅ Automated lighting with motion detection
+- ✅ Security monitoring with camera system
+- ✅ Remote door control with access codes
+- ✅ Environmental monitoring and alerts
+- ✅ Central control panel for management
+- ✅ Scheduled automation routines
+- ✅ Security alerts and notifications
+- ✅ Customizable settings and configurations
+
+This comprehensive example demonstrates how to create a full-featured mod using all three Construct frameworks. The mod integrates seamlessly with the game's systems and provides a rich, interactive experience for players.

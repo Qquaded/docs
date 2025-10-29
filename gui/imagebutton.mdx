@@ -1,0 +1,152 @@
+---
+title: "ImageButton"
+description: "Clickable image component for icon-based interactions"
+---
+
+<Badge>Client</Badge>
+
+## Description
+
+ImageButton is a clickable image component that displays an image and responds to user clicks, ideal for icon-based interfaces.
+
+## Properties
+
+### Inherits from BaseGui
+ImageButton inherits all properties from [BaseGui](/gui/basegui).
+
+### Image
+```lua
+string
+```
+
+The asset ID of the image to display.
+
+### ImageColor3
+```lua
+Color3
+```
+
+The tint color applied to the image.
+
+### BackgroundTransparency
+```lua
+number
+```
+
+The transparency of the button background (0-1).
+
+### BorderSizePixel
+```lua
+number
+```
+
+The size of the button border in pixels.
+
+### CornerRadius
+```lua
+UDim
+```
+
+The corner radius for rounded corners.
+
+## Events
+
+### Activated
+```lua
+RBXScriptSignal
+```
+
+Fires when the button is clicked.
+
+## Usage Examples
+
+### Basic Image Button
+```lua
+local ImageButton = require(ReplicatedStorage.Shared.Gui.Components.ImageButton)
+
+local iconButton = ImageButton.new({
+    Image = "rbxassetid://123456789",
+    Size = UDim2.fromScale(0.1, 0.1),
+    Position = UDim2.fromScale(0.45, 0.45),
+    BackgroundTransparency = 1,
+    ImageColor3 = Color3.new(1, 1, 1)
+})
+
+iconButton.Activated:Connect(function()
+    print("Icon clicked!")
+end)
+
+iconButton.Parent = game.Players.LocalPlayer.PlayerGui
+```
+
+### Styled Icon Button with LuaCSS
+```lua
+local luacss = require(ReplicatedStorage.Shared.Libraries.LuaCSS)
+
+local iconButton = luacss.compileObject({
+    class = "ImageButton",
+    Image = "rbxassetid://987654321",
+    Size = UDim2.fromScale(0.08, 0.08),
+    style = "iconButton",
+
+    states = {
+        MouseEnter = function(obj)
+            luacss.spring(obj, {
+                ImageColor3 = Color3.fromRGB(150, 150, 150)
+            })
+        end,
+
+        MouseLeave = function(obj)
+            luacss.spring(obj, {
+                ImageColor3 = Color3.new(1, 1, 1)
+            })
+        end
+    }
+})
+
+iconButton.Activated:Connect(function()
+    toggleMenu()
+end)
+
+iconButton.Parent = gui
+```
+
+### Toolbar Icon
+```lua
+local toolbarButton = luacss.compileObject({
+    class = "ImageButton",
+    Image = "rbxassetid://456789123",
+    Size = UDim2.fromScale(0.06, 0.06),
+    Position = UDim2.fromScale(0.02, 0.02),
+    AnchorPoint = Vector2.new(0, 0),
+    BackgroundTransparency = 1,
+    ImageColor3 = Color3.fromRGB(200, 200, 200),
+
+    states = {
+        MouseEnter = function(obj)
+            obj.ImageColor3 = Color3.new(1, 1, 1)
+        end,
+
+        MouseLeave = function(obj)
+            obj.ImageColor3 = Color3.fromRGB(200, 200, 200)
+        end
+    }
+})
+
+toolbarButton.Activated:Connect(function()
+    openToolsPanel()
+end)
+```
+
+## Notes
+
+- Perfect for icon-based interfaces and toolbars
+- Supports image tinting and transparency
+- Can be styled with hover effects and animations
+- Background transparency allows for overlay designs
+
+## See Also
+
+- [BaseGui](/gui/basegui)
+- [TextButton](/gui/textbutton)
+- [LuaCSS](/libraries/luacss)

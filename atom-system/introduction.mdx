@@ -1,0 +1,96 @@
+---
+title: "Atom System Introduction"
+description: "Learn about the Atom system, a powerful framework for managing block-based functionality in Construct"
+---
+
+## Overview
+
+The Atom system is a sophisticated framework designed for managing block-based functionality in the Construct game. It provides a comprehensive solution for registering, configuring, launching, and despawning complex block assemblies with network synchronization and runtime management.
+
+## Key Features
+
+- **Block Management**: Register and manage individual blocks with unique identifiers (NIDs)
+- **Configuration System**: Flexible configuration templates for block properties
+- **Network Synchronization**: Client-server communication for launching and despawning builds
+- **Runtime Management**: Dynamic property modification during execution
+- **Digital Blocks**: Support for virtual/programmatic blocks alongside physical ones
+- **Welding System**: Automatic joint creation and management for stable structures
+- **Serialization**: Safe network transmission of build data
+
+## Core Concepts
+
+### Network Identifiers (NIDs)
+Every block in the Atom system receives a unique Network Identifier (NID) stored as an attribute. This allows for reliable tracking and management of individual blocks across the network.
+
+### Block Functionality Modules
+Each block type can have associated functionality modules that define:
+- **LaunchedReplicated**: Code that runs on both client and server
+- **LaunchedServer**: Server-only functionality
+- **LaunchedClient**: Client-only functionality
+
+### Runtime Configuration
+Blocks can have their properties modified at runtime, allowing for dynamic behavior changes during gameplay.
+
+## Architecture
+
+The Atom system operates with a client-server architecture:
+
+- **Client**: Handles user input, serialization, and client-side block functionality
+- **Server**: Manages security checks, deserialization, and server-side functionality
+- **Shared**: Common functionality that runs on both environments
+
+## Getting Started
+
+To use the Atom system in your Construct project:
+
+1. Create an Atom instance using `Atom.new()`
+2. Register block functionalities with `AddFunctionality()`
+3. Create configuration templates with `NewConfigTemplate()`
+4. Launch builds using the `Launch()` method
+5. Clean up resources with `Despawn()` when done
+
+## Example Usage
+
+```lua
+local Atom = require(path.to.Atom)
+
+-- Create new Atom instance
+local atom = Atom.new()
+
+-- Register block functionality
+atom:AddFunctionality("MyBlock", script.MyBlockModule)
+
+-- Create configuration template
+local configTemplate = atom:NewConfigTemplate("MyBlock")
+configTemplate:AddPropertyValue("Speed", 10)
+configTemplate:AddPropertyValue("Color", Color3.new(1, 0, 0))
+
+-- Launch a build
+local success = atom:Launch(buildModel, player.UserId, storage, callback)
+if success then
+    print("Build launched successfully")
+end
+```
+
+## Integration with Construct
+
+The Atom system integrates seamlessly with other Construct systems:
+
+- **Vision Framework**: Uses Vision for remote communication
+- **Construct API**: Registered as a service for global access
+- **Logger**: Integrated logging for debugging
+- **Serializer**: Handles network-safe data transmission
+
+## Security Features
+
+- **Security Checks**: Server-side validation of serialized build data
+- **Player Validation**: Ensures only the build owner can modify their creations
+- **Timeout Protection**: Network operations have built-in timeouts to prevent hanging
+
+## Performance Considerations
+
+- **Concurrent Launch Protection**: Prevents multiple simultaneous launches of the same build
+- **Memory Management**: Automatic cleanup of resources and connections
+- **Network Optimization**: Efficient serialization and promise-based communication
+
+This architecture ensures the Atom system can handle complex block-based gameplay while maintaining performance and security standards.

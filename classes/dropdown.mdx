@@ -1,0 +1,171 @@
+---
+title: "Dropdown"
+description: "Parses and creates dropdown selection options with validation"
+---
+
+<Badge>Client and Server</Badge>
+
+## Description
+
+The Dropdown class provides functionality for parsing and creating dropdown selection options with a custom text format.
+
+## Constructor
+
+### new
+```lua
+Dropdown Dropdown.new(text: string)
+```
+
+Creates a new Dropdown instance by parsing the input text.
+
+**Parameters:**
+- `text` (string): The formatted dropdown text to parse
+
+**Returns:** A new Dropdown instance
+
+## Properties
+
+### Raw
+```lua
+string
+```
+
+The original input text.
+
+### Options
+```lua
+{string}
+```
+
+Array of available dropdown options.
+
+### Selected
+```lua
+string?
+```
+
+The currently selected option.
+
+## Methods
+
+### GetOptions
+```lua
+{string} Dropdown:GetOptions()
+```
+
+Returns the array of available options.
+
+**Returns:** Table of option strings
+
+### GetSelected
+```lua
+string? Dropdown:GetSelected()
+```
+
+Returns the currently selected option.
+
+**Returns:** The selected option string or nil if invalid
+
+## Static Methods
+
+### create
+```lua
+string Dropdown.create(options: {string}, selected?: string)
+```
+
+Creates a formatted dropdown string.
+
+**Parameters:**
+- `options` (table): Array of option strings
+- `selected` (string?): The selected option (defaults to first option)
+
+**Returns:** The formatted dropdown string
+
+## Format Specification
+
+The Dropdown uses a specific text format:
+```
+<dropdown:{option1,option2,option3}> selectedOption <dropdown>
+```
+
+Where:
+- `option1,option2,option3`: Comma-separated list of available options
+- `selectedOption`: The currently selected option
+
+## Usage Examples
+
+### Parsing Dropdowns
+```lua
+local Dropdown = require(ReplicatedStorage.Shared.Classes.Dropdown)
+
+-- Parse a dropdown string
+local dropdown = Dropdown.new("<dropdown:{Small,Medium,Large}> Medium <dropdown>")
+
+print(dropdown:GetSelected()) -- "Medium"
+local options = dropdown:GetOptions()
+for i, option in ipairs(options) do
+    print(i, option) -- 1: "Small", 2: "Medium", 3: "Large"
+end
+```
+
+### Creating Dropdowns
+```lua
+-- Create a dropdown with options
+local dropdownText = Dropdown.create({"Easy", "Normal", "Hard"}, "Normal")
+print(dropdownText) -- "<dropdown:{Easy,Normal,Hard}> Normal <dropdown>"
+```
+
+### Validation and Selection
+```lua
+local difficulty = Dropdown.new("<dropdown:{Easy,Normal,Hard}> Easy <dropdown>")
+
+-- Check current selection
+if difficulty:GetSelected() == "Easy" then
+    setDifficultyMultiplier(0.5)
+elseif difficulty:GetSelected() == "Hard" then
+    setDifficultyMultiplier(2.0)
+end
+
+-- Get all available options for UI
+local options = difficulty:GetOptions()
+for _, option in ipairs(options) do
+    createDropdownButton(option)
+end
+```
+
+### Configuration Usage
+```lua
+-- Quality settings
+local qualityOptions = {"Low", "Medium", "High", "Ultra"}
+local qualityDropdown = Dropdown.create(qualityOptions, "Medium")
+
+-- Parse and apply
+local quality = Dropdown.new(qualityDropdown)
+local selectedQuality = quality:GetSelected()
+
+if selectedQuality == "Low" then
+    setRenderDistance(500)
+elseif selectedQuality == "Ultra" then
+    setRenderDistance(2000)
+end
+
+-- Theme selection
+local themes = {"Light", "Dark", "Blue", "Green"}
+local themeDropdown = Dropdown.create(themes, "Dark")
+local theme = Dropdown.new(themeDropdown)
+
+applyTheme(theme:GetSelected())
+```
+
+## Notes
+
+- Automatically validates that selected option exists in options list
+- Falls back to first option if selected option is invalid
+- Options are trimmed of whitespace automatically
+- Primarily used for configuration and settings systems
+
+## See Also
+
+- [NumberRange](/classes/numberrange)
+- [Color](/classes/color)
+- [SettingsKeycode](/classes/settingskeycode)

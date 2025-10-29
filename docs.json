@@ -1,68 +1,95 @@
 {
-  "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "Construct Modding Documentation",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#8338EC",
+    "light": "#C77DFF",
+    "dark": "#5A189A"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "/logo.png",
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Modding",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Getting Started",
             "pages": [
-              "index",
-              "quickstart",
-              "development"
+              "modding/overview"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Official Mod System",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "modding/mod-system"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "API Reference",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
+              "vision-framework/api-reference",
+              "construct-api/api-reference",
+              "atom-system/api-reference"
             ]
           },
           {
-            "group": "AI tools",
+            "group": "Services",
             "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "API reference",
-        "groups": [
-          {
-            "group": "API documentation",
-            "pages": [
-              "api-reference/introduction"
+              "modding/vision-framework",
+              "modding/construct-api",
+              "modding/atom-system"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Examples",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "modding/example-mod"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "vision-framework/introduction",
+              "construct-api/introduction",
+              "atom-system/introduction"
+            ]
+          },
+          {
+            "group": "Classes",
+            "pages": [
+              "classes/mod",
+              "classes/settingskeycode",
+              "classes/numberrange",
+              "classes/color",
+              "classes/dropdown"
+            ]
+          },
+          {
+            "group": "Libraries",
+            "pages": [
+              "libraries/logger",
+              "libraries/luacss",
+              "libraries/datavault",
+              "libraries/atom"
+            ]
+          },
+          {
+            "group": "Services",
+            "pages": [
+              "services/subplaceservice",
+              "services/themeservice",
+              "services/serializer"
+            ]
+          },
+          {
+            "group": "GUI Components",
+            "pages": [
+              "gui/basegui",
+              "gui/textbutton",
+              "gui/imagebutton",
+              "gui/textbox",
+              "gui/scroller",
+              "gui/window"
             ]
           }
         ]
@@ -71,13 +98,13 @@
     "global": {
       "anchors": [
         {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
+          "anchor": "Modding TOS",
+          "href": "https://github.com/Qquaded/ctemp/blob/main/README.md",
           "icon": "book-open-cover"
         },
         {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
+          "anchor": "Roadmap",
+          "href": "https://gist.github.com/Qquaded/c597a2a81dab6b62df11fb0a3f313678",
           "icon": "newspaper"
         }
       ]
@@ -85,38 +112,24 @@
   },
   "logo": {
     "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
+    "dark": "/logo/dark.png"
   },
   "navbar": {
     "links": [
       {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "label": "Community",
+        "href": "https://discord.gg/U6jgctn39G"
       }
     ],
     "primary": {
       "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
+      "label": "Play Construct",
+      "href": "https://www.roblox.com/games/110169915376827/Construct-Sandbox#ropro-random-server"
     }
-  },
-  "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+      "discord": "https://discord.gg/U6jgctn39G"
     }
   }
 }

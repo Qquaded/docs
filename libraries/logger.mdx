@@ -1,0 +1,144 @@
+---
+title: "Logger"
+description: "Comprehensive logging system for debugging and monitoring in Construct"
+---
+
+<Badge>Client and Server</Badge>
+
+## Description
+
+The Logger library provides a comprehensive logging system for debugging, monitoring, and error tracking in Construct. It offers multiple log levels and can be toggled on/off via LogService messages.
+
+## Methods
+
+### Log
+```lua
+Logger.Log(name: string, desc: string)
+```
+
+Logs a general message.
+
+**Parameters:**
+- `name` (string): Identifier for the logging source
+- `desc` (string): Description of the event
+
+### Error
+```lua
+Logger.Error(name: string, desc: string)
+```
+
+Logs an error message and throws an error.
+
+**Parameters:**
+- `name` (string): Identifier for the logging source
+- `desc` (string): Error description
+
+### Warn
+```lua
+Logger.Warn(name: string, desc: string)
+```
+
+Logs a warning message.
+
+**Parameters:**
+- `name` (string): Identifier for the logging source
+- `desc` (string): Warning description
+
+### Assert
+```lua
+Logger.Assert(item: any, name: string, desc: string)
+```
+
+Asserts that an item exists, logging an error if it doesn't.
+
+**Parameters:**
+- `item` (any): Item to check for existence
+- `name` (string): Identifier for the logging source
+- `desc` (string): Error description if assertion fails
+
+### Debug
+```lua
+Logger.Debug(name: string, desc: string)
+```
+
+Logs a debug message.
+
+**Parameters:**
+- `name` (string): Identifier for the logging source
+- `desc` (string): Debug description
+
+### DebugStep
+```lua
+Logger.DebugStep(name: string, desc?: string)
+```
+
+Logs a debug step with line number and script information.
+
+**Parameters:**
+- `name` (string): Identifier for the logging source
+- `desc` (string?): Optional step description
+
+### ResetCounter
+```lua
+Logger.ResetCounter()
+```
+
+Resets the debug step counter.
+
+## Features
+
+- **Toggle-able Logging**: Send "dblogs" message via LogService to toggle logging on/off
+- **Debug Step Tracking**: Includes file name and line number in debug steps
+- **Multiple Log Levels**: Log, Error, Warn, Assert, Debug, DebugStep
+- **Source Identification**: Each log entry includes a source identifier
+
+## Usage Examples
+
+### Basic Logging
+```lua
+local Logger = require(ReplicatedStorage.Shared.Libraries.Logger)
+
+Logger.Log("MySystem", "System initialized successfully")
+Logger.Warn("MySystem", "Low memory warning")
+Logger.Error("MySystem", "Critical error occurred")
+```
+
+### Debug Logging
+```lua
+Logger.Debug("PlayerManager", "Processing player join")
+Logger.DebugStep("PlayerManager", "Validating player data")
+Logger.DebugStep("PlayerManager", "Setting up player environment")
+Logger.DebugStep("PlayerManager", "Player setup complete")
+```
+
+### Assertion Checks
+```lua
+local playerData = getPlayerData(playerId)
+Logger.Assert(playerData, "PlayerManager", "Player data not found")
+
+local config = loadConfiguration()
+Logger.Assert(config, "ConfigManager", "Failed to load configuration")
+```
+
+### Error Handling
+```lua
+local success, result = pcall(function()
+	return performRiskyOperation()
+end)
+
+if not success then
+	Logger.Error("OperationManager", `Operation failed: {result}`)
+end
+```
+
+## Notes
+
+- Logging can be disabled by sending "dblogs" message via LogService
+- DebugStep includes automatic line number and script name tracking
+- Error method throws an error after logging
+- Assert method throws an error if the assertion fails
+
+## See Also
+
+- [Vision Framework](/modding/vision-framework)
+- [Construct API](/modding/construct-api)

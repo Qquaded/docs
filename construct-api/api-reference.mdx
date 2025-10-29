@@ -1,0 +1,222 @@
+---
+title: "Construct API Reference"
+description: "Complete API reference for Construct API methods and registered services"
+---
+
+## Core Methods
+
+### Register(key, value)
+
+Registers a value under a specific key for later retrieval. This method supports method chaining for registering multiple items.
+
+**Parameters:**
+- `key` (string): The identifier for the registered item
+- `value` (any): The value to store (can be any Lua type)
+
+**Returns:** The ConstructAPI instance (for chaining)
+
+**Example:**
+```lua
+ConstructAPI:Register("Gui", script.Parent :: ScreenGui)
+         :Register("Config", {theme = "dark"})
+```
+
+### Get(key)
+
+Retrieves a previously registered value by its key. Returns `nil` if the key doesn't exist.
+
+**Parameters:**
+- `key` (string): The identifier of the item to retrieve
+
+**Returns:** The registered value, or `nil` if not found
+
+**Example:**
+```lua
+local gui = ConstructAPI:Get("Gui")
+if gui then
+    gui.Enabled = true
+end
+```
+
+## Registered Services
+
+The Construct API automatically registers the following services during client initialization:
+
+### Core Services
+
+#### Gui
+The main ScreenGui instance for the client interface.
+```lua
+local gui = ConstructAPI:Get("Gui") :: ScreenGui
+```
+
+#### Plot
+The player's assigned plot ID from player attributes.
+```lua
+local plotId = ConstructAPI:Get("Plot") :: number
+```
+
+#### Player
+The local player instance.
+```lua
+local player = ConstructAPI:Get("Player") :: Player
+```
+
+#### Remote
+Vision remote instance for the player's UserId.
+```lua
+local remote = ConstructAPI:Get("Remote")
+remote:Fire("PlayerAction", "jump")
+```
+
+#### Signal
+Signal registry instance for client communication.
+```lua
+local signal = ConstructAPI:Get("Signal")
+signal:Fire("CustomEvent", data)
+```
+
+### Component Folders
+
+#### Modules
+Folder containing client modules.
+```lua
+local modules = ConstructAPI:Get("Modules") :: Folder
+```
+
+#### Plugins
+Folder containing client plugins.
+```lua
+local plugins = ConstructAPI:Get("Plugins") :: Folder
+```
+
+#### Libraries
+Vision libraries folder.
+```lua
+local libraries = ConstructAPI:Get("Libraries") :: Folder
+```
+
+### Communication
+
+#### Client
+Client signal instance for handling requests like plugin removal and refresh.
+```lua
+local client = ConstructAPI:Get("Client")
+client:Fire("RemovePlugin", pluginName)
+```
+
+#### DataPasser
+RemoteFunction for server communication.
+```lua
+local dataPasser = ConstructAPI:Get("DataPasser") :: RemoteFunction
+local result = dataPasser:InvokeServer("GetData", params)
+```
+
+### Plot Components
+
+#### PlotBase
+The base part of the player's plot.
+```lua
+local plotBase = ConstructAPI:Get("PlotBase") :: BasePart
+```
+
+#### PlotBuild
+The build container of the player's plot.
+```lua
+local plotBuild = ConstructAPI:Get("PlotBuild") :: Model
+```
+
+### Libraries and Components
+
+#### FusionComponents
+Fusion UI components package.
+```lua
+local fusion = ConstructAPI:Get("FusionComponents")
+```
+
+#### Atom
+Atom instance for functionality management.
+```lua
+local atom = ConstructAPI:Get("Atom")
+```
+
+#### NotificationsService
+Construct notification service instance.
+```lua
+local notifications = ConstructAPI:Get("NotificationsService")
+notifications:Show("Hello World!")
+```
+
+## Utility Functions
+
+### require
+Custom require function that uses `ConstructAPI:Get(index)` for consistent module loading.
+```lua
+local customRequire = ConstructAPI:Get("require")
+local myModule = customRequire("MyModuleName")
+```
+
+### GetConfigForBlock
+Function to retrieve configuration for blocks via DataPasser.
+```lua
+local getConfig = ConstructAPI:Get("GetConfigForBlock")
+local config = getConfig(blockInstance)
+```
+
+## Client Signal Events
+
+The client signal handles specific request types:
+
+### "RemovePlugin"
+Removes a plugin from the cache and calls its cleanup function.
+```lua
+ConstructAPI:Get("Client"):Fire("RemovePlugin", pluginName)
+```
+
+### "RefreshPlugins"
+Reloads all cached plugins.
+```lua
+ConstructAPI:Get("Client"):Fire("RefreshPlugins")
+```
+
+## Automatic Registration
+
+The API automatically registers all `ModuleScript` instances found in `game:GetDescendants()` if they haven't been registered already. This provides global access to any module in the game hierarchy without manual registration.
+
+## Best Practices
+
+1. **Check Existence**: Always verify a key exists before accessing it
+   ```lua
+   local service = ConstructAPI:Get("MyService")
+   if not service then
+       warn("Service not found!")
+       return
+   end
+   ```
+
+2. **Descriptive Keys**: Use clear, descriptive key names
+   ```lua
+   -- Good
+   ConstructAPI:Register("PlayerInventory", inventory)
+   -- Avoid
+   ConstructAPI:Register("inv", inventory)
+   ```
+
+3. **Type Documentation**: Document expected types in comments
+   ```lua
+   local gui = ConstructAPI:Get("Gui") :: ScreenGui
+   ```
+
+4. **Consistent Require**: Use the custom require function for all module loading
+   ```lua
+   local myModule = ConstructAPI:Get("require")("MyModule")
+   ```
+
+## Error Handling
+
+Since `Get()` returns `nil` for unregistered keys, always check return values:
+```lua
+local config = ConstructAPI:Get("GameConfig")
+if not config then
+    config = {defaultSettings = true} -- Provide fallback
+end

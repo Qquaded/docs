@@ -1,0 +1,352 @@
+---
+title: "Using Vision Framework in Mods"
+description: "Learn how to leverage the Vision Framework for robust mod development in Construct"
+---
+
+## Vision Framework in Modding
+
+The Vision Framework is the backbone of Construct modding. It provides essential services for module management, networking, and cross-environment compatibility that every mod relies on. In the sandboxed modding environment, Vision helps you safely load modules and communicate between client and server.
+
+## Initializing Vision in Your Mod
+
+In the sandboxed modding environment, initialize Vision to access its services:
+
+```lua
+local vision = require(ReplicatedStorage.Vision)
+
+-- Initialize with logging enabled for development
+vision:start(true)
+
+-- Your mod code here
+```
+
+**Note:** Vision runs within the sandboxed VM environment, so you cannot directly access Roblox services. Use Construct API for game interactions.
+
+## Module Management
+
+### Loading Custom Modules
+
+Use Vision's safe requiring system for your mod's modules:
+
+```lua
+-- Good: Use Vision's safe require
+local myModule = vision:get("MyCustomModule")
+
+-- Avoid: Direct require (may crash on missing modules)
+-- local myModule = require(path.to.module)
+```
+
+### Organizing Mod Modules
+
+Structure your mod with clear module organization:
+
+```lua
+-- In your mod's init.lua
+vision:get("UI/MyModUI")
+vision:get("Blocks/MyCustomBlock")
+vision:get("Services/MyModService")
+```
+
+## Service Registration
+
+Register your mod's services with Vision for global access:
+
+```lua
+-- Register a service
+vision:Service("MyModService", {
+    initialize = function()
+        print("My mod service initialized!")
+    end,
+    getVersion = function()
+        return "1.0.0"
+    end
+})
+
+-- Access from anywhere
+local myService = vision:Service("MyModService")
+myService:getVersion()
+```
+
+## Networking with Vision
+
+### Creating Remote Connections
+
+Use Vision's remote system for client-server communication:
+
+```lua
+-- Create a remote for your mod
+local modRemote = vision:remote("MyModRemote")
+
+-- On the server
+modRemote:Fire(player, "ModEvent", data)
+
+-- On the client
+modRemote:Connect(function(player, eventType, eventData)
+    if eventType == "ModEvent" then
+        handleModEvent(eventData)
+    end
+end)
+```
+
+### Handling Network Promises
+
+For reliable communication, use Vision's promise system:
+
+```lua
+local Quadnet = vision.Quadnet
+local promise = Quadnet.NetPromise.new(modRemote.remote)
+
+-- Client-side request
+local success, response = promise:SendUntilAcknowledged(
+    "RequestData",
+    "DataReceived",
+    10, -- timeout
+    requestParams
+)
+
+if success then
+    processResponse(response)
+end
+```
+
+## Accessing Pre-loaded Libraries
+
+Vision comes with essential libraries ready to use:
+
+```lua
+-- Maid for cleanup management
+local Maid = vision.Maid
+local cleaner = Maid.new()
+cleaner:GiveTask(myConnection)
+cleaner:GiveTask(myInstance)
+
+-- Spring for smooth animations
+local Spring = vision.Spring
+local positionSpring = Spring.new(Vector3.new(0, 0, 0))
+positionSpring:Impulse(Vector3.new(10, 0, 0))
+
+-- Guard for type checking
+local Guard = vision.Guard
+local isValid = Guard.String(myString) and Guard.Number(myNumber)
+
+-- Logger for consistent logging
+local Logger = vision.Logger
+Logger:Info("Mod loaded successfully")
+Logger:Warn("Something might be wrong")
+Logger:Error("Critical error occurred")
+```
+
+## Environment-Specific Code
+
+Handle client and server differences properly:
+
+```lua
+local RunService = game:GetService("RunService")
+
+if RunService:IsServer() then
+    -- Server-only code
+    vision:get("Server/MyModServer")
+elseif RunService:IsClient() then
+    -- Client-only code
+    vision:get("Client/MyModClient")
+end
+
+-- Shared code (runs on both)
+vision:get("Shared/MyModShared")
+```
+
+## Lazy Loading Modules
+
+Load modules on-demand to improve performance:
+
+```lua
+-- Create a lazy loader
+vision:lazyload(script.Parent.Modules)
+
+-- Now you can access modules directly from Vision
+local myLazyModule = vision.MyLazyModule
+```
+
+## Error Handling
+
+Implement robust error handling using Vision's safe requiring:
+
+```lua
+local success, myModule = pcall(function()
+    return vision:get("MyModule")
+end)
+
+if not success or not myModule then
+    warn("Failed to load MyModule, using fallback")
+    myModule = {} -- fallback implementation
+end
+```
+
+## Mod Lifecycle Management
+
+Use Vision's cleanup systems for proper mod management:
+
+```lua
+local modMaid = vision.GlobalMaid
+
+-- Register cleanup tasks
+modMaid:GiveTask(function()
+    print("Mod is being unloaded")
+    -- Cleanup code here
+end)
+
+modMaid:GiveTask(myRemote:Destroy())
+modMaid:GiveTask(myService:Destroy())
+```
+
+## Best Practices for Vision in Mods
+
+### 1. Always Initialize Vision First
+```lua
+-- Do this at the top of your mod
+local vision = require(ReplicatedStorage.Vision)
+vision:start()
+```
+
+### 2. Use Safe Requiring
+```lua
+-- Prefer this
+local myModule = vision:get("MyModule")
+
+-- Over this
+local myModule = require(path.to.MyModule)
+```
+
+### 3. Register Services with Unique Names
+```lua
+-- Use mod-specific prefixes
+vision:Service("MyMod_CoreService", coreService)
+vision:Service("MyMod_UIService", uiService)
+```
+
+### 4. Handle Network Timeouts
+```lua
+local success, result = pcall(function()
+    return modRemote:SendUntilAcknowledged("Request", "Response", 15, data)
+end)
+
+if not success then
+    -- Handle timeout/network error
+    fallbackBehavior()
+end
+```
+
+### 5. Clean Up Resources
+```lua
+local maid = vision.Maid.new()
+
+-- Register all cleanup tasks
+maid:GiveTask(modRemote)
+maid:GiveTask(modService)
+maid:GiveTask(modUI)
+
+-- Clean up when mod unloads
+maid:Destroy()
+```
+
+### 6. Use Environment Checks
+```lua
+if vision.Server then
+    -- Server-only functionality
+elseif vision.Highlight then
+    -- Client-only functionality
+end
+```
+
+## Common Mod Patterns
+
+### Service-Based Mod
+```lua
+local vision = require(ReplicatedStorage.Vision)
+vision:start()
+
+local MyModService = vision:Service("MyModService", {
+    _activeEffects = {},
+
+    applyEffect = function(self, target, effectType)
+        self._activeEffects[target] = effectType
+        -- Apply effect logic
+    end,
+
+    removeEffect = function(self, target)
+        self._activeEffects[target] = nil
+        -- Remove effect logic
+    end
+})
+
+return MyModService
+```
+
+### Networked Block Mod
+```lua
+local vision = require(ReplicatedStorage.Vision)
+vision:start()
+
+local blockRemote = vision:remote("MyBlockRemote")
+
+-- Client-side interaction
+blockRemote:Connect(function(player, action, blockId)
+    if action == "activate" then
+        local block = vision:get("BlockManager"):getBlock(blockId)
+        block:activate()
+    end
+end)
+
+-- Server-side validation
+if RunService:IsServer() then
+    blockRemote:Connect(function(player, action, blockId)
+        if validateBlockOwnership(player, blockId) then
+            -- Process action
+        end
+    end)
+end
+```
+
+## Troubleshooting
+
+### Mod Not Loading
+- Check that Vision is initialized before your mod code
+- Verify module paths are correct
+- Use logging to debug loading issues
+
+### Network Issues
+- Ensure remote names are unique
+- Check timeout values are reasonable
+- Validate data serialization
+
+### Memory Leaks
+- Always clean up resources with Maid
+- Remove event connections when done
+- Use weak tables for caches when appropriate
+
+## Advanced Vision Features
+
+### Custom Library Loading
+```lua
+-- Load custom libraries into Vision
+vision:lazyload(script.Parent.Libraries)
+
+-- Access as Vision properties
+local myLib = vision.MyCustomLibrary
+```
+
+### Service Dependencies
+```lua
+-- Services can depend on each other
+vision:Service("MyModDatabase", function(name, vision)
+    local logger = vision:Service("Logger")
+    return {
+        save = function(data)
+            logger:Info("Saving data")
+            -- save logic
+        end
+    }
+end)
+```
+
+The Vision Framework provides the foundation every Construct mod needs. Master these patterns to create robust, maintainable mods that integrate seamlessly with the Construct ecosystem.

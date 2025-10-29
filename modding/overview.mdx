@@ -1,0 +1,257 @@
+---
+title: "Modding Overview"
+description: "Learn how to create mods for Construct using Vision Framework, Construct API, and Atom System"
+---
+
+# Construct Modding Guide
+
+<Note>
+  **Important**: The Construct modding system frontend is not yet coded, so you cannot actually test or run mods right now. This documentation is for planning and learning purposes only. Check the [Construct Roadmap](https://gist.github.com/Qquaded/c597a2a81dab6b62df11fb0a3f313678) for development updates.
+</Note>
+
+Welcome to the Construct modding documentation! This guide will teach you how to create custom modifications for Construct, a Roblox block-building game, using the powerful frameworks and APIs available.
+
+## What is Construct Modding?
+
+Construct is a block-building game on Roblox that supports extensive modding capabilities. You can create new blocks, mechanics, UI elements, and gameplay features using Lua scripting within a sandboxed environment. All mods run in isolated virtual machines for security and stability.
+
+## Core Frameworks
+
+Construct modding revolves around three main frameworks:
+
+### 🏗️ Vision Framework
+The foundation framework that handles:
+- Module loading and management
+- Remote communication
+- Service registration
+- Cross-environment compatibility
+
+### 🔧 Construct API
+The central registry system that provides:
+- Global service access
+- Client-side resource management
+- Plugin system integration
+- Custom require functionality
+
+### ⚛️ Atom System
+The block functionality framework that enables:
+- Custom block behaviors
+- Network-synchronized builds
+- Runtime property modification
+- Complex mechanical systems
+
+## Getting Started with Modding
+
+### Prerequisites
+- Basic knowledge of Lua programming
+- Understanding of Roblox Studio and Roblox development
+- Familiarity with game development concepts
+- GitHub account (for sharing mods)
+
+### Development Environment
+1. Install Roblox Studio
+2. Set up your modding workspace
+3. Learn the framework APIs and sandboxed environment
+4. **Note**: Testing mods is not yet available - check roadmap for updates
+5. Publish to GitHub for sharing (when system is ready)
+
+## Mod Types
+
+### Light Mods
+Simple modifications consisting of a single script file. Perfect for small tweaks and additions that run in the sandboxed VM environment.
+
+### Heavy Mods
+Complex modifications with full project structure including client/server scripts, assets, and configuration. Supports the complete modding framework.
+
+### Modpacks
+Collections of multiple mods bundled together with dependency management.
+
+### Block Mods (via Atom System)
+Create new building blocks with custom functionality:
+- Interactive mechanisms
+- Power systems
+- Decorative elements
+- Functional components
+
+### UI Mods (via Construct API)
+Enhance the user interface:
+- Custom menus and panels
+- HUD modifications
+- Notification systems
+- Input handling
+
+### Gameplay Mods
+Modify core game mechanics:
+- New game modes
+- Custom physics
+- Economy systems
+- Multiplayer features
+
+### Utility Mods
+Add helpful features:
+- Building tools
+- Quality-of-life improvements
+- Debugging utilities
+- Performance optimizations
+
+## Basic Mod Structure
+
+### Light Mod Structure
+```
+LightMod.lua
+```
+
+### Heavy Mod Structure
+```
+HeavyMod/
+├── manifest.lua        # Mod metadata and configuration
+├── scripts/
+│   ├── client/         # Client-side scripts (sandboxed)
+│   └── server/         # Server-side scripts
+├── assets/
+│   ├── models/         # 3D models and prefabs
+│   ├── textures/       # Images and UI assets
+│   ├── sounds/         # Audio files
+│   └── dependencies/   # Runtime dependencies
+├── config/
+│   └── settings.lua    # Mod configuration options
+└── README.md           # Documentation
+```
+
+### Legacy Mod Structure (for reference)
+```
+YourMod/
+├── init.lua          # Main mod file
+├── Blocks/           # Custom block definitions
+├── UI/              # User interface components
+├── Services/        # Custom services
+└── Config/          # Configuration files
+```
+
+## Quick Start Example
+
+Here's a simple light mod that adds a notification button:
+
+```lua
+-- SimpleNotificationMod.lua
+local capi = require(ReplicatedStorage.Shared.Locations) -- or ConstructAPI
+
+-- Mod registration
+capi:Register("SimpleNotificationMod", {
+    version = "1.0.0",
+    description = "Adds a simple notification button",
+
+    init = function()
+        print("Simple Notification Mod loaded!")
+
+        -- Get GUI service
+        local gui = capi:Get("Gui")
+
+        -- Create notification button
+        local button = Instance.new("TextButton")
+        button.Text = "🔔 Notify!"
+        button.Size = UDim2.new(0, 120, 0, 40)
+        button.Position = UDim2.new(0.85, -60, 0.9, -20)
+        button.BackgroundColor3 = Color3.fromRGB(100, 150, 255)
+        button.TextColor3 = Color3.new(1, 1, 1)
+        button.Parent = gui
+
+        -- Add functionality
+        button.Activated:Connect(function()
+            local notifications = capi:Get("NotificationsService")
+            notifications:Show("Simple Mod", "Hello from the mod!", 3)
+        end)
+
+        print("Notification button created!")
+    end
+})
+
+return true -- Indicate successful loading
+```
+
+For a heavy mod with custom blocks, see the complete example in the Examples section. **Note**: This example is theoretical until the modding system is implemented.
+
+## Best Practices
+
+### Code Organization
+- Use clear, descriptive names
+- Organize code into logical modules
+- Document your code thoroughly
+- Follow Lua style guidelines
+
+### Performance
+- Minimize network calls
+- Use efficient algorithms
+- Clean up resources properly
+- Test on low-end devices
+
+### Compatibility
+- Check for existing mods
+- Use unique identifiers
+- Handle errors gracefully
+- Provide fallback behavior
+
+### Security
+- Validate user input
+- Use server-side validation
+- Avoid client-side trust
+- Sanitize network data
+
+## Community Resources
+
+- **[Discord Server (Quadigen)](https://discord.gg/PPpVrxFsrc)**: Join the Construct modding community
+- **[Modding ToS](https://github.com/Qquaded/ctemp/blob/main/README.md)**: Read the modding terms of service
+- **[Construct Roadmap](https://gist.github.com/Qquaded/c597a2a81dab6b62df11fb0a3f313678)**: Check development progress and timelines
+- **GitHub**: Access open-source mod examples
+- **Documentation**: Comprehensive API references
+
+## Next Steps
+
+<Card
+  title="Mod System"
+  icon="cogs"
+  href="/modding/mod-system"
+>
+  Learn about Construct's official modding system and sandboxed environments
+</Card>
+
+<Card
+  title="Vision Framework Guide"
+  icon="eye"
+  href="/modding/vision-framework"
+>
+  Learn how to use the Vision Framework in your mods
+</Card>
+
+<Card
+  title="Construct API Guide"
+  icon="wrench"
+  href="/modding/construct-api"
+>
+  Master the Construct API for client-side modding
+</Card>
+
+<Card
+  title="Atom System Guide"
+  icon="atom"
+  href="/modding/atom-system"
+>
+  Create custom blocks with the Atom System
+</Card>
+
+<Card
+  title="Complete Example"
+  icon="code"
+  href="/modding/example-mod"
+>
+  Follow a complete modding example from start to finish
+</Card>
+
+## Need Help?
+
+- Check the troubleshooting section
+- Ask in the Discord community
+- Review existing mods for inspiration
+- Read the API documentation thoroughly
+
+Happy modding! 🎮

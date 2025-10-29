@@ -1,0 +1,202 @@
+---
+title: "Mod"
+description: "Represents a mod in the Construct modding system with metadata and configuration"
+---
+
+<Badge>Client and Server</Badge>
+
+## Description
+
+The `Mod` class represents a mod in the Construct modding system. It contains metadata, configuration, and dependency information for mods.
+
+## Properties
+
+### Name
+```lua
+string
+```
+
+The display name of the mod.
+
+### Id
+```lua
+string?
+```
+
+The unique identifier of the mod. Auto-generated if not provided.
+
+### Owner
+```lua
+string
+```
+
+The UserId of the mod owner.
+
+### Icon
+```lua
+string?
+```
+
+The asset ID for the mod's icon/thumbnail.
+
+### ModAddress
+```lua
+string
+```
+
+The snake_case identifier used for URLs and references.
+
+### Description
+```lua
+string
+```
+
+A detailed description of what the mod does.
+
+### Version
+```lua
+string
+```
+
+The semantic version string (e.g., "1.0.0").
+
+### PlaceId
+```lua
+number?
+```
+
+Optional restriction to specific place IDs.
+
+### Whitelisted
+```lua
+{ number }
+```
+
+Array of UserIds allowed to use the mod.
+
+### IsPrivate
+```lua
+boolean
+```
+
+Whether the mod is private or public.
+
+### GithubLink
+```lua
+string
+```
+
+Link to the mod's GitHub repository.
+
+### Dependencies
+```lua
+{[string]: Mod}
+```
+
+Table of mods this mod depends on.
+
+### AssetDependencies
+```lua
+{number}
+```
+
+Array of asset IDs this mod requires.
+
+### MachineType
+```lua
+string
+```
+
+Target platform ("Linux", "Windows", "Android").
+
+### ModType
+```lua
+string
+```
+
+The type of mod ("Light", "Heavy", "Modpack").
+
+### Genre
+```lua
+string?
+```
+
+Optional categorization tag.
+
+## Type Definition
+
+```lua
+export type Mod = {
+	Name: string,
+	Id: string?,
+	Owner: string,
+	Icon: string?,
+	ModAddress: string,
+	Description: string,
+	Version: string,
+	PlaceId: number?,
+	Whitelisted: { number },
+	IsPrivate: boolean,
+	GithubLink: string,
+	Dependencies: {[string]: Mod},
+	AssetDependencies: {number},
+	MachineType: string,
+	ModType: string,
+	Genre: string?,
+}
+```
+
+## Manifest Type
+
+```lua
+export type Manifest = {
+	Name: string,
+	Version: string,
+	Author: string,
+	Description: string,
+	Thumbnail: string,
+	Icon: string,
+	ModType: "Light" | "Heavy" | "Modpack",
+	EntryPoint: string?,
+}
+```
+
+## Usage
+
+### Creating a Mod Manifest
+
+```lua
+local manifest = {
+	Name = "My Awesome Mod",
+	Version = "1.0.0",
+	Author = "YourName",
+	Description = "Adds awesome features to Construct",
+	Thumbnail = "rbxassetid://123456789",
+	Icon = "rbxassetid://987654321",
+	ModType = "Light",
+	EntryPoint = "init.lua"
+}
+```
+
+### Accessing Mod Information
+
+```lua
+-- In editor mode
+local subplaceService = require(ReplicatedStorage.Services.SubplaceService)
+if subplaceService:IsEditor() then
+	local modClass = require(ReplicatedStorage.Shared.Classes.Mod)
+	-- Access mod properties
+end
+```
+
+## Notes
+
+- The `Mod` class is primarily used in editor mode for mod management
+- Mods can have dependencies on other mods
+- Asset dependencies must be approved by Construct
+- Private mods can only be used by whitelisted users
+
+## See Also
+
+- [Official Mod System](/modding/mod-system)
+- [Modding Overview](/modding/overview)

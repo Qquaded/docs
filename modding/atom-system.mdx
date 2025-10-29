@@ -1,0 +1,646 @@
+---
+title: "Using Atom System in Mods"
+description: "Create custom blocks and complex mechanical systems with the Atom System"
+---
+
+## Atom System in Modding
+
+The Atom System is the heart of block-based modding in Construct. It enables you to create custom blocks with unique behaviors, network-synchronized functionality, and complex mechanical interactions. In the sandboxed modding environment, Atom provides safe access to block creation and management through the Construct API.
+
+## Getting Started with Atom
+
+Access the Atom system through the Construct API in your sandboxed mod:
+
+```lua
+-- In your mod's sandboxed environment
+local capi = require(ReplicatedStorage.Shared.Locations) -- or ConstructAPI
+local atom = capi:Get("Atom")
+
+-- Atom is now ready to use within the sandbox
+local myAtom = atom.new()
+```
+
+**Note:** All Atom operations are validated and restricted within the sandboxed environment for security.
+
+## Creating Custom Blocks
+
+### Block Functionality Module
+
+Create a module that defines your block's behavior:
+
+```lua
+-- MyCustomBlock.lua
+local MyCustomBlock = {}
+
+function MyCustomBlock.LaunchedReplicated(block, build, identifier, config, atom, ...)
+    -- Code that runs on both client and server
+    print("Block launched:", block.Name)
+
+    -- Set up visual effects
+    local particles = Instance.new("ParticleEmitter")
+    particles.Parent = block
+    particles.Rate = config.ParticleRate or 10
+
+    return particles -- Return for cleanup
+end
+
+function MyCustomBlock.LaunchedServer(block, build, identifier, config, atom, ...)
+    -- Server-only logic
+    print("Server: Block activated for player", identifier)
+
+    -- Server-side validation and processing
+    if config.RequiresPermission then
+        local hasPermission = checkPlayerPermission(identifier, "useCustomBlock")
+        if not hasPermission then
+            return "Permission denied"
+        end
+    end
+
+    -- Set up server-side behavior
+    local connection = block.Touched:Connect(function(hit)
+        if hit.Parent:FindFirstChild("Humanoid") then
+            -- Handle player interaction
+            handleBlockInteraction(block, hit.Parent, config)
+        end
+    end)
+
+    return connection -- Return for cleanup
+end
+
+function MyCustomBlock.LaunchedClient(block, build, identifier, config, atom, ...)
+    -- Client-only logic
+    print("Client: Block ready")
+
+    -- Set up client-side effects
+    local sound = Instance.new("Sound")
+    sound.SoundId = config.ActivationSound or "rbxassetid://142700651"
+    sound.Parent = block
+
+    -- Handle user input
+    local clickDetector = Instance.new("ClickDetector")
+    clickDetector.Parent = block
+    clickDetector.MouseClick:Connect(function(player)
+        sound:Play()
+        atom:ActivateFunction(block, "MyCustomBlock", "OnClicked", build, identifier, player)
+    end)
+
+    return clickDetector -- Return for cleanup
+end
+
+-- Custom functions that can be called via ActivateFunction
+function MyCustomBlock.OnClicked(block, build, identifier, config, atom, player)
+    print("Block clicked by", player.Name)
+
+    -- Trigger custom behavior
+    if config.ClickEffect == "explode" then
+        createExplosion(block.Position)
+    elseif config.ClickEffect == "teleport" then
+        teleportPlayer(player, config.TeleportTarget)
+    end
+end
+
+return MyCustomBlock
+```
+
+### Registering Your Block
+
+Register the block with Atom:
+
+```lua
+-- In your mod's init script
+local atom = ConstructAPI:Get("Atom")
+
+-- Register the functionality module
+atom:AddFunctionality("MyCustomBlock", script.MyCustomBlock)
+
+-- Create configuration template
+local config = atom:NewConfigTemplate("MyCustomBlock")
+config:AddPropertyValue("ParticleRate", 10)
+config:AddPropertyValue("ActivationSound", "rbxassetid://142700651")
+config:AddPropertyValue("ClickEffect", "explode")
+config:AddPropertyValue("RequiresPermission", false)
+config:AddPropertyValue("TeleportTarget", Vector3.new(0, 10, 0))
+
+print("MyCustomBlock registered!")
+```
+
+## Block Configuration
+
+### Dynamic Configuration
+
+Modify block properties at runtime:
+
+```lua
+-- Set properties on a specific block
+atom:SetPropertyValue(myBlock, "ParticleRate", 20)
+
+-- Or by NID
+local nid = atom.GetNID(myBlock)
+atom:SetPropertyValue(nid, "Active", true)
+
+-- Get current configuration
+local config = atom:GetBlockConfig(myBlock)
+print("Current power:", config.Power)
+```
+
+### Runtime Value Management
+
+Access and modify runtime values during gameplay:
+
+```lua
+local identifier = player.UserId -- Build identifier
+local nid = atom.GetNID(myBlock)
+
+-- Set runtime values
+atom.SetRuntimeBlockValue(identifier, nid, "Health", 100)
+atom.SetRuntimeBlockValue(identifier, nid, "Energy", 50)
+
+-- Get runtime values
+local health = atom.GetRuntimeValue(identifier, nid, "Health")
+local energy = atom.GetRuntimeValue(identifier, nid, "Energy")
+
+if health <= 0 then
+    -- Block is destroyed
+    atom:ActivateFunction(myBlock, "MyCustomBlock", "OnDestroyed", build, identifier)
+end
+```
+
+## Launching and Despawning Builds
+
+### Launching a Build
+
+Activate all blocks in a build:
+
+```lua
+local buildModel = workspace.MyBuild
+local playerId = player.UserId
+local storage = {} -- Your serialization storage
+
+local success = atom:Launch(buildModel, playerId, storage, function(part)
+    -- Callback for each part during welding
+    print("Processing part:", part.Name)
+end)
+
+if success then
+    print("Build launched successfully!")
+else
+    warn("Failed to launch build")
+end
+```
+
+### Despawning a Build
+
+Clean up a build and free resources:
+
+```lua
+local result = atom:Despawn(buildModel, storage, playerId)
+
+if result == "Success" then
+    print("Build despawned successfully!")
+else
+    warn("Failed to despawn build:", result)
+end
+```
+
+## Advanced Block Behaviors
+
+### Interactive Blocks
+
+Create blocks that respond to player interaction:
+
+```lua
+-- InteractiveButton.lua
+local InteractiveButton = {}
+
+function InteractiveButton.LaunchedReplicated(block, build, identifier, config, atom)
+    -- Set up interaction detection
+    local detector = Instance.new("ClickDetector")
+    detector.MaxActivationDistance = 10
+    detector.Parent = block
+
+    return detector
+end
+
+function InteractiveButton.LaunchedClient(block, build, identifier, config, atom)
+    local detector = block:FindFirstChild("ClickDetector")
+
+    detector.MouseClick:Connect(function(player)
+        -- Send activation to server
+        atom:ActivateFunction(block, "InteractiveButton", "OnActivated", build, identifier, player)
+    end)
+end
+
+function InteractiveButton.LaunchedServer(block, build, identifier, config, atom)
+    -- Server-side activation logic
+end
+
+function InteractiveButton.OnActivated(block, build, identifier, config, atom, player)
+    print(player.Name .. " activated button")
+
+    -- Trigger connected blocks
+    local connectedBlocks = findConnectedBlocks(block, build)
+    for _, connectedBlock in ipairs(connectedBlocks) do
+        atom:ActivateFunction(connectedBlock, connectedBlock.Name, "OnSignalReceived", build, identifier, "button_pressed")
+    end
+end
+
+return InteractiveButton
+```
+
+### Power Systems
+
+Create blocks that manage power distribution:
+
+```lua
+-- PowerGenerator.lua
+local PowerGenerator = {}
+
+function PowerGenerator.LaunchedReplicated(block, build, identifier, config, atom)
+    -- Visual power indicator
+    local light = Instance.new("PointLight")
+    light.Color = Color3.fromRGB(255, 255, 0)
+    light.Range = 10
+    light.Parent = block
+
+    return light
+end
+
+function PowerGenerator.LaunchedServer(block, build, identifier, config, atom)
+    -- Generate power over time
+    local connection = RunService.Heartbeat:Connect(function(deltaTime)
+        local currentPower = atom.GetRuntimeValue(identifier, atom.GetNID(block), "Power") or 0
+        local newPower = math.min(config.MaxPower, currentPower + (config.PowerRate * deltaTime))
+
+        atom.SetRuntimeBlockValue(identifier, atom.GetNID(block), "Power", newPower)
+
+        -- Distribute power to connected blocks
+        distributePower(block, build, identifier, newPower, atom)
+    end)
+
+    return connection
+end
+
+function distributePower(generator, build, identifier, powerAmount, atom)
+    local connectedBlocks = findPoweredBlocks(generator, build)
+
+    for _, poweredBlock in ipairs(connectedBlocks) do
+        local nid = atom.GetNID(poweredBlock)
+        atom.SetRuntimeBlockValue(identifier, nid, "ReceivedPower", powerAmount)
+    end
+end
+
+return PowerGenerator
+```
+
+### Sensor Blocks
+
+Create blocks that detect environmental changes:
+
+```lua
+-- MotionSensor.lua
+local MotionSensor = {}
+
+function MotionSensor.LaunchedReplicated(block, build, identifier, config, atom)
+    -- Detection zone visualization
+    local zone = Instance.new("Part")
+    zone.Shape = Enum.PartType.Ball
+    zone.Size = Vector3.new(config.DetectionRadius * 2, config.DetectionRadius * 2, config.DetectionRadius * 2)
+    zone.Anchored = true
+    zone.CanCollide = false
+    zone.Transparency = 0.8
+    zone.Material = Enum.Material.ForceField
+    zone.Color = Color3.fromRGB(255, 0, 0)
+    zone.Position = block.Position
+    zone.Parent = block
+
+    return zone
+end
+
+function MotionSensor.LaunchedServer(block, build, identifier, config, atom)
+    local detectionZone = block:FindFirstChild("DetectionZone")
+
+    local connection = detectionZone.Touched:Connect(function(hit)
+        local humanoid = hit.Parent:FindFirstChild("Humanoid")
+        if humanoid and not atom.GetRuntimeValue(identifier, atom.GetNID(block), "IsTriggered") then
+            -- Trigger the sensor
+            atom.SetRuntimeBlockValue(identifier, atom.GetNID(block), "IsTriggered", true)
+
+            -- Notify connected blocks
+            atom:ActivateFunction(block, "MotionSensor", "OnTriggered", build, identifier, hit)
+
+            -- Reset after delay
+            task.delay(config.ResetDelay, function()
+                atom.SetRuntimeBlockValue(identifier, atom.GetNID(block), "IsTriggered", false)
+            end)
+        end
+    end)
+
+    return connection
+end
+
+function MotionSensor.OnTriggered(block, build, identifier, config, atom, triggerPart)
+    print("Motion detected by sensor")
+
+    -- Trigger alarms, lights, etc.
+    local connectedBlocks = findConnectedBlocks(block, build)
+    for _, connectedBlock in ipairs(connectedBlocks) do
+        atom:ActivateFunction(connectedBlock, connectedBlock.Name, "OnMotionDetected", build, identifier)
+    end
+end
+
+return MotionSensor
+```
+
+## Digital Blocks
+
+Create programmatic blocks that exist only in data:
+
+```lua
+-- Create a digital block
+local nid = atom:RegisterDigitalBlock("VirtualSensor", {
+    Position = Vector3.new(10, 5, 0),
+    Rotation = Vector3.new(0, 90, 0)
+}, {
+    Sensitivity = 0.8,
+    Range = 50
+})
+
+-- Digital blocks can be used like physical ones
+local config = atom:GetBlockConfig(nid)
+print("Digital sensor sensitivity:", config.Sensitivity)
+```
+
+## Build Serialization
+
+Work with build serialization for saving/loading:
+
+```lua
+local Serializer = require(script.Serializer) -- Assuming you have this
+
+-- Serialize a build
+local serializedData = Serializer:Serialize(buildModel, storage)
+
+-- Send to server for saving
+local dataPasser = ConstructAPI:Get("DataPasser")
+dataPasser:InvokeServer("SaveBuild", {
+    buildData = serializedData,
+    buildName = "MyAwesomeBuild"
+})
+
+-- Deserialize a build
+local deserializedBlocks = Serializer:Deserialize(serializedData, storage, atom)
+
+-- Add blocks to a new build
+local newBuild = Instance.new("Model")
+newBuild.Name = "LoadedBuild"
+
+for _, block in ipairs(deserializedBlocks) do
+    block.Parent = newBuild
+end
+
+newBuild.Parent = workspace
+```
+
+## Best Practices for Atom Mods
+
+### 1. Always Return Cleanup Objects
+```lua
+function MyBlock.LaunchedClient(block, build, identifier, config, atom)
+    local sound = Instance.new("Sound")
+    sound.Parent = block
+
+    local connection = sound.Ended:Connect(function()
+        -- Handle sound end
+    end)
+
+    return {sound, connection} -- Atom will clean these up
+end
+```
+
+### 2. Use Runtime Values for Dynamic State
+```lua
+-- Good: Use runtime values for changing state
+atom.SetRuntimeBlockValue(identifier, nid, "Health", 100)
+
+-- Avoid: Modifying config directly (changes are permanent)
+-- config.Health = 100 -- This persists
+```
+
+### 3. Validate Block Operations
+```lua
+function MyBlock.OnActivated(block, build, identifier, config, atom, player)
+    -- Check if block can be activated
+    if atom.GetRuntimeValue(identifier, atom.GetNID(block), "Cooldown") > 0 then
+        return "Block is on cooldown"
+    end
+
+    -- Check permissions
+    if config.RequiresPermission and not hasPermission(player, config.RequiredPermission) then
+        return "Insufficient permissions"
+    end
+
+    -- Activate the block
+    atom.SetRuntimeBlockValue(identifier, atom.GetNID(block), "Cooldown", 5)
+    -- ... activation logic
+end
+```
+
+### 4. Handle Network Synchronization
+```lua
+-- Server-side change that needs to sync to clients
+function MyBlock.ServerUpdate(block, build, identifier, config, atom, newValue)
+    atom.SetRuntimeBlockValue(identifier, atom.GetNID(block), "ServerValue", newValue)
+
+    -- The change will automatically sync to clients through runtime value replication
+end
+```
+
+### 5. Use Block Connections Wisely
+```lua
+-- Find connected blocks efficiently
+local function findConnectedBlocks(block, build)
+    local connected = {}
+    local startPos = block.Position
+
+    for _, otherBlock in ipairs(build:GetChildren()) do
+        if otherBlock ~= block and (otherBlock.Position - startPos).Magnitude < 10 then
+            table.insert(connected, otherBlock)
+        end
+    end
+
+    return connected
+end
+```
+
+### 6. Implement Proper Error Handling
+```lua
+function MyBlock.LaunchedServer(block, build, identifier, config, atom)
+    local success, result = pcall(function()
+        -- Risky operation
+        return performComplexOperation(block, config)
+    end)
+
+    if not success then
+        warn("Failed to launch block:", result)
+        return nil -- Block failed to launch
+    end
+
+    return result -- Cleanup object
+end
+```
+
+## Common Mod Patterns
+
+### Mechanical System Mod
+```lua
+local atom = ConstructAPI:Get("Atom")
+
+-- Register multiple interconnected blocks
+atom:AddFunctionality("Gear", script.Gear)
+atom:AddFunctionality("Belt", script.Belt)
+atom:AddFunctionality("Motor", script.Motor)
+
+-- Create a mechanical system
+local MechanicalSystem = {
+    createGearSystem = function(build, centerPos)
+        -- Create interconnected gears
+        local gear1 = createBlock("Gear", centerPos)
+        local gear2 = createBlock("Gear", centerPos + Vector3.new(5, 0, 0))
+        local motor = createBlock("Motor", centerPos + Vector3.new(-5, 0, 0))
+
+        -- Connect them with belts
+        connectBlocks(gear1, gear2, "Belt")
+        connectBlocks(motor, gear1, "Belt")
+
+        return {gear1, gear2, motor}
+    end
+}
+
+ConstructAPI:Register("MechanicalSystem", MechanicalSystem)
+```
+
+### Environmental Effects Mod
+```lua
+local atom = ConstructAPI:Get("Atom")
+
+atom:AddFunctionality("WeatherController", script.WeatherController)
+atom:AddFunctionality("LightSensor", script.LightSensor)
+atom:AddFunctionality("AutomatedBlind", script.AutomatedBlind)
+
+local EnvironmentalMod = {
+    createSmartHome = function(build, housePos)
+        local controller = createBlock("WeatherController", housePos + Vector3.new(0, 10, 0))
+        local sensors = {}
+        local blinds = {}
+
+        -- Create sensors around the house
+        for i = 1, 4 do
+            local angle = (i - 1) * math.pi / 2
+            local sensorPos = housePos + Vector3.new(math.cos(angle) * 15, 5, math.sin(angle) * 15)
+            table.insert(sensors, createBlock("LightSensor", sensorPos))
+        end
+
+        -- Create automated blinds on windows
+        for _, window in ipairs(findWindows(build)) do
+            table.insert(blinds, createBlock("AutomatedBlind", window.Position))
+        end
+
+        return {
+            controller = controller,
+            sensors = sensors,
+            blinds = blinds
+        }
+    end
+}
+
+ConstructAPI:Register("EnvironmentalMod", EnvironmentalMod)
+```
+
+### Puzzle System Mod
+```lua
+local atom = ConstructAPI:Get("Atom")
+
+atom:AddFunctionality("PressurePlate", script.PressurePlate)
+atom:AddFunctionality("Door", script.Door)
+atom:AddFunctionality("LaserSensor", script.LaserSensor)
+
+local PuzzleSystem = {
+    createLaserMaze = function(build, startPos, endPos)
+        local plates = {}
+        local doors = {}
+        local sensors = {}
+
+        -- Create pressure plates along path
+        local pathLength = (endPos - startPos).Magnitude
+        local numPlates = math.floor(pathLength / 5)
+
+        for i = 1, numPlates do
+            local t = (i - 1) / (numPlates - 1)
+            local pos = startPos:Lerp(endPos, t)
+            table.insert(plates, createBlock("PressurePlate", pos))
+        end
+
+        -- Create laser sensors
+        for _, plate in ipairs(plates) do
+            local sensorPos = plate.Position + Vector3.new(0, 3, 0)
+            table.insert(sensors, createBlock("LaserSensor", sensorPos))
+        end
+
+        -- Create doors that open when puzzle is solved
+        table.insert(doors, createBlock("Door", endPos + Vector3.new(0, 0, 5)))
+
+        return {
+            plates = plates,
+            sensors = sensors,
+            doors = doors,
+            solved = false
+        }
+    end,
+
+    checkPuzzleSolved = function(puzzle)
+        -- Check if all plates are activated
+        for _, plate in ipairs(puzzle.plates) do
+            local activated = atom.GetRuntimeValue("puzzle_build", atom.GetNID(plate), "Activated")
+            if not activated then
+                return false
+            end
+        end
+
+        if not puzzle.solved then
+            puzzle.solved = true
+            -- Open doors
+            for _, door in ipairs(puzzle.doors) do
+                atom:ActivateFunction(door, "Door", "Open", nil, "puzzle_build")
+            end
+        end
+
+        return true
+    end
+}
+
+ConstructAPI:Register("PuzzleSystem", PuzzleSystem)
+```
+
+## Troubleshooting
+
+### Blocks Not Launching
+- Check that functionality modules are registered
+- Verify configuration templates exist
+- Ensure block names match registration
+
+### Runtime Values Not Syncing
+- Runtime values are not automatically networked
+- Use remote events for client-server communication
+- Store persistent data in block configurations
+
+### Memory Leaks
+- Always return cleanup objects from launch functions
+- Use Atom's built-in cleanup system
+- Disconnect events when blocks are despawned
+
+### Performance Issues
+- Limit complex operations in Heartbeat connections
+- Use object pooling for frequently created instances
+- Cache expensive calculations
+
+The Atom System provides unlimited potential for creating complex, interactive block-based systems in Construct. Combine it with Vision Framework networking and Construct API services to build comprehensive mods that feel like native game features.

@@ -1,0 +1,425 @@
+---
+title: "Construct Mod System"
+description: "Learn about Construct's official modding system, sandboxed environments, and mod formats"
+---
+
+<Note>
+  **Important**: The Construct modding system frontend is not yet coded, so you cannot actually create, test, or run mods right now. This documentation describes the planned system architecture. Check the [Construct Roadmap](https://gist.github.com/Qquaded/c597a2a81dab6b62df11fb0a3f313678) for development updates.
+</Note>
+
+## Construct Mod System Overview
+
+Construct features a comprehensive modding system that allows players to create, share, and install custom modifications. The system supports multiple mod types and provides a sandboxed environment for safe execution.
+
+## Mod Types
+
+### Light Mods
+Light mods are simple modifications that consist of a single script file. They're perfect for small tweaks and additions.
+
+**Structure:**
+```
+LightMod.lua
+```
+
+**Manifest Example:**
+```lua
+return {
+    Name = "SimpleTweaks",
+    Version = "1.0.0",
+    Author = "YourName",
+    Description = "Small quality-of-life improvements",
+    ModType = "Light",
+    EntryPoint = "SimpleTweaks"
+}
+```
+
+### Heavy Mods
+Heavy mods are complex modifications with full project structure, including client/server scripts, assets, and configuration.
+
+**Structure:**
+```
+HeavyMod/
+├── manifest.lua        -- Mod metadata and configuration
+├── scripts/
+│   ├── client/         -- Client-side scripts (UI, input, effects)
+│   └── server/         -- Server-side scripts (game logic, validation)
+├── assets/
+│   ├── models/         -- 3D models and prefabs
+│   ├── textures/       -- Images and UI assets
+│   ├── sounds/         -- Audio files
+│   └── dependencies/   -- Runtime dependencies
+├── config/
+│   └── settings.lua    -- Mod configuration options
+└── README.md           -- Documentation
+```
+
+**Manifest Example:**
+```lua
+return {
+    Name = "AdvancedBuilding",
+    Version = "2.1.0",
+    Author = "ProModder",
+    Description = "Adds advanced building tools and mechanics",
+    Thumbnail = "rbxassetid://123456789",
+    ModType = "Heavy",
+    EntryPoint = "main",
+    Icon = "rbxassetid://987654321"
+}
+```
+
+### Modpacks
+Modpacks are collections of multiple mods bundled together. They can include dependencies and manage complex mod interactions.
+
+**Structure:**
+```
+Modpack/
+├── manifest.lua
+├── mods/              -- Individual mod folders
+└── dependencies/      -- Shared dependencies
+```
+
+## Sandboxed Environment
+
+All mods run in a sandboxed Lua environment (VM) that provides security and stability:
+
+### Environment Restrictions
+- **No direct game access**: Mods cannot directly access Roblox services
+- **Limited API**: Only approved functions and services are available
+- **Resource limits**: CPU time and memory usage are restricted
+- **Network isolation**: HTTP requests are controlled and monitored
+
+### Available APIs
+Mods can access Construct's APIs through controlled interfaces:
+
+```lua
+-- Construct API access
+local ConstructAPI = require(ReplicatedStorage.Shared.Locations)
+local capi = ConstructAPI -- Alternative shorthand
+
+-- Access core services
+local player = capi:Get("Player")
+local gui = capi:Get("Gui")
+local atom = capi:Get("Atom")
+```
+
+### VM Features
+- **Isolated execution**: Each mod runs in its own virtual machine
+- **Error containment**: Script errors don't crash the main game
+- **Performance monitoring**: Resource usage is tracked and limited
+- **Hot reloading**: Mods can be reloaded without restarting the game
+
+## Mod Loading Process
+
+### 1. Manifest Validation
+The system first validates the mod's manifest file to ensure it contains required information and follows the correct format.
+
+### 2. Dependency Resolution
+Dependencies are loaded and validated before the main mod loads.
+
+### 3. Sandbox Creation
+A new VM is created with the mod's specific environment and permissions.
+
+### 4. Script Execution
+Mod scripts are loaded and executed in the sandboxed environment.
+
+### 5. Integration
+The mod is integrated with the game's systems and made available to players.
+
+## Creating Mods
+
+### Basic Light Mod Template
+
+```lua
+-- SimpleLightMod.lua
+local capi = require(ReplicatedStorage.Shared.Locations)
+
+-- Mod initialization
+capi:Register("SimpleLightMod", {
+    version = "1.0.0",
+    description = "A simple light mod",
+    
+    init = function()
+        print("Simple Light Mod loaded!")
+        
+        -- Add a simple feature
+        local gui = capi:Get("Gui")
+        local button = Instance.new("TextButton")
+        button.Text = "Click me!"
+        button.Size = UDim2.new(0, 100, 0, 50)
+        button.Position = UDim2.new(0.5, -50, 0.5, -25)
+        button.Parent = gui
+        
+        button.Activated:Connect(function()
+            local notifications = capi:Get("NotificationsService")
+            notifications:Show("Simple Mod", "Button clicked!", 3)
+        end)
+    end
+})
+
+return true -- Success
+```
+
+### Heavy Mod Template
+
+```lua
+-- manifest.lua
+return {
+    Name = "HeavyModExample",
+    Version = "1.0.0",
+    Author = "YourName",
+    Description = "An example heavy mod",
+    ModType = "Heavy",
+    EntryPoint = "main"
+}
+```
+
+```lua
+-- scripts/server/main.lua
+local capi = require(ReplicatedStorage.Shared.Locations)
+
+-- Server-side initialization
+print("Heavy Mod server scripts loaded")
+
+-- Register server-side services
+capi:Register("HeavyMod_Server", {
+    validateAction = function(player, action)
+        -- Server-side validation logic
+        return true
+    end
+})
+```
+
+```lua
+-- scripts/client/main.lua
+local capi = require(ReplicatedStorage.Shared.Locations)
+
+-- Client-side initialization
+print("Heavy Mod client scripts loaded")
+
+-- Create UI
+local gui = capi:Get("Gui")
+local modUI = Instance.new("Frame")
+modUI.Name = "HeavyModUI"
+modUI.Size = UDim2.new(0.3, 0, 0.4, 0)
+modUI.Position = UDim2.new(0.35, 0, 0.3, 0)
+modUI.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+modUI.Parent = gui
+
+-- Register UI
+capi:Register("HeavyModUI", modUI)
+```
+
+```lua
+-- config/settings.lua
+return {
+    -- Mod configuration options
+    enabled = true,
+    volume = 0.8,
+    theme = "dark",
+    
+    -- Advanced settings
+    performance = {
+        maxParticles = 100,
+        updateRate = 30
+    }
+}
+```
+
+## Mod Management
+
+### Installing Mods
+
+Mods can be installed from:
+- **GitHub repositories**: Direct links to mod repositories
+- **Workshop**: Community-shared mods
+- **Local files**: RBXM files containing mod data
+
+```lua
+-- Example: Load mod from GitHub
+local modLoader = require(path.to.ModLoader)
+local mod = modLoader:LoadLink("https://github.com/user/mod-repo/blob/main/mod.rbxm")
+```
+
+### Converting Legacy Mods
+
+Use the built-in converter to transform old mod formats:
+
+```lua
+local modConverter = require(path.to.ModConverter)
+local heavyMod = modConverter:ToHeavyModFormat("MyOldMod", legacyInstance)
+```
+
+### Mod Dependencies
+
+Specify dependencies in your manifest:
+
+```lua
+return {
+    Name = "ComplexMod",
+    Version = "1.0.0",
+    Dependencies = {
+        "RequiredMod1",
+        "RequiredMod2"
+    },
+    AssetDependencies = {
+        123456789, -- Asset IDs
+        987654321
+    }
+}
+```
+
+## API Reference
+
+### Core Functions
+
+#### `csm:CreateMod(mod, overwrite)`
+Creates a new mod entry in the system.
+
+**Parameters:**
+- `mod` (Mod): Mod configuration object
+- `overwrite` (boolean, optional): Whether to overwrite existing mods
+
+#### `csm:LoadMod(id)`
+Loads a mod by ID or name.
+
+**Parameters:**
+- `id` (string | number): Mod identifier
+
+**Returns:** Loaded mod folder or nil
+
+#### `csm:DecodeRBXM(binary)`
+Decodes RBXM binary data into usable instances.
+
+**Parameters:**
+- `binary` (string): RBXM binary data
+
+**Returns:** Decoded model and source map
+
+#### `csm:ToHeavyModFormat(name, instance)`
+Converts a legacy mod instance to heavy mod format.
+
+**Parameters:**
+- `name` (string): Mod name
+- `instance` (Instance): Legacy mod instance
+
+**Returns:** Converted mod folder
+
+### VM Functions
+
+#### `csm.newVM(env)`
+Creates a new sandboxed VM for mod execution.
+
+**Parameters:**
+- `env` (table, optional): Custom environment variables
+
+**Returns:** VM instance with LoadModScripts method
+
+## Best Practices
+
+### Security
+- **Validate inputs**: Always validate data from untrusted sources
+- **Use server validation**: Critical logic should run on the server
+- **Limit resource usage**: Be mindful of performance impact
+- **Handle errors gracefully**: Don't crash the game on mod errors
+
+### Performance
+- **Minimize network calls**: Cache data when possible
+- **Use efficient algorithms**: Optimize complex operations
+- **Clean up resources**: Properly dispose of instances and connections
+- **Profile your code**: Use built-in profiling tools
+
+### Compatibility
+- **Test on different platforms**: Windows, Android, etc.
+- **Check dependencies**: Ensure required mods are available
+- **Version compatibility**: Specify supported game versions
+- **Graceful degradation**: Handle missing features elegantly
+
+### Distribution
+- **Clear documentation**: Provide comprehensive README files
+- **Version management**: Use semantic versioning
+- **Update notifications**: Inform users of new versions
+- **Community support**: Provide ways for users to get help
+
+## Troubleshooting
+
+### Common Issues
+
+#### Mod Not Loading
+- Check manifest syntax
+- Verify file structure
+- Review error logs
+- Check dependencies
+
+#### Sandbox Errors
+- Review API usage
+- Check environment restrictions
+- Validate script syntax
+- Test in isolation
+
+#### Performance Problems
+- Profile resource usage
+- Optimize algorithms
+- Reduce network calls
+- Implement caching
+
+#### Compatibility Issues
+- Test on target platforms
+- Check game version compatibility
+- Review dependency versions
+- Update deprecated APIs
+
+## Advanced Topics
+
+### Custom VM Environments
+Create specialized execution environments for specific mod types:
+
+```lua
+local customVM = csm.newVM({
+    -- Custom globals
+    MOD_NAME = "MyMod",
+    MOD_VERSION = "1.0.0",
+    
+    -- Custom functions
+    log = function(message)
+        print("[MyMod] " .. message)
+    end
+})
+```
+
+### Network Communication
+Mods can communicate with external services through controlled HTTP:
+
+```lua
+-- Note: HTTP access is restricted and monitored
+local function safeHttpGet(url)
+    -- Implementation provided by sandbox
+    return modHttp:GetAsync(url)
+end
+```
+
+### Asset Management
+Handle mod assets efficiently:
+
+```lua
+-- Preload assets
+local assetManager = capi:Get("AssetManager")
+assetManager:PreloadAssets(modAssets)
+
+-- Access loaded assets
+local texture = assetManager:GetAsset("modTexture")
+```
+
+## Community Resources
+
+- **[Discord Server (Quadigen)](https://discord.gg/PPpVrxFsrc)**: Join the Construct modding community
+- **[Modding ToS](https://github.com/Qquaded/ctemp/blob/main/README.md)**: Read the modding terms of service
+- **[Construct Roadmap](https://gist.github.com/Qquaded/c597a2a81dab6b62df11fb0a3f313678)**: Check development progress and timelines
+- **GitHub**: Host and share your mods (when system is ready)
+- **Workshop**: Publish mods for the community (when system is ready)
+- **Documentation**: Comprehensive API references
+
+## Conclusion
+
+Construct's modding system provides a powerful yet safe way to extend and customize the game. By following the guidelines and best practices outlined here, you can create amazing mods that enhance the Construct experience for all players.
+
+Remember: Always test your mods thoroughly, respect the sandbox restrictions, and contribute positively to the community!

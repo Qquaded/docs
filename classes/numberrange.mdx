@@ -1,0 +1,192 @@
+---
+title: "NumberRange"
+description: "Parses and validates number ranges with custom formatting"
+---
+
+<Badge>Client and Server</Badge>
+
+## Description
+
+The NumberRange class provides functionality for parsing, creating, and validating number ranges with a custom text format.
+
+## Constructor
+
+### new
+```lua
+NumberRange NumberRange.new(text: string)
+```
+
+Creates a new NumberRange instance by parsing the input text.
+
+**Parameters:**
+- `text` (string): The formatted range text to parse
+
+**Returns:** A new NumberRange instance
+
+## Properties
+
+### Raw
+```lua
+string
+```
+
+The original input text.
+
+### Tag
+```lua
+string?
+```
+
+The tag identifier extracted from the range format.
+
+### Min
+```lua
+number?
+```
+
+The minimum value of the range.
+
+### Max
+```lua
+number?
+```
+
+The maximum value of the range.
+
+### Value
+```lua
+string?
+```
+
+The optional value associated with the range.
+
+## Methods
+
+### GetMin
+```lua
+number? NumberRange:GetMin()
+```
+
+Returns the minimum value of the range.
+
+**Returns:** The minimum value or nil if not parsed
+
+### GetMax
+```lua
+number? NumberRange:GetMax()
+```
+
+Returns the maximum value of the range.
+
+**Returns:** The maximum value or nil if not parsed
+
+### GetValue
+```lua
+string? NumberRange:GetValue()
+```
+
+Returns the associated value of the range.
+
+**Returns:** The value string or nil if not set
+
+### IsInRange
+```lua
+boolean NumberRange:IsInRange(inputValue: any)
+```
+
+Checks if the input value falls within the range.
+
+**Parameters:**
+- `inputValue` (any): The value to check
+
+**Returns:** `true` if the value is within range, `false` otherwise
+
+## Static Methods
+
+### create
+```lua
+string NumberRange.create(tag: string, min: number, max: number, value?: string)
+```
+
+Creates a formatted range string.
+
+**Parameters:**
+- `tag` (string): The tag identifier
+- `min` (number): The minimum value
+- `max` (number): The maximum value
+- `value` (string?): Optional associated value
+
+**Returns:** The formatted range string
+
+## Format Specification
+
+The NumberRange uses a specific text format:
+```
+<tag>(min-max) value <tag>
+```
+
+Where:
+- `tag`: Identifier for the range type
+- `min`: Minimum numeric value
+- `max`: Maximum numeric value
+- `value`: Optional associated content
+
+## Usage Examples
+
+### Parsing Ranges
+```lua
+local NumberRange = require(ReplicatedStorage.Shared.Classes.NumberRange)
+
+-- Parse a range string
+local range = NumberRange.new("<damage>(10-50) fire <damage>")
+
+print(range:GetMin())  -- 10
+print(range:GetMax())  -- 50
+print(range:GetValue()) -- "fire"
+```
+
+### Creating Ranges
+```lua
+-- Create a formatted range string
+local rangeText = NumberRange.create("health", 0, 100, "regenerating")
+print(rangeText) -- "<health>(0-100) regenerating <health>"
+```
+
+### Range Validation
+```lua
+local range = NumberRange.new("<level>(1-10) <level>")
+
+-- Check if values are in range
+print(range:IsInRange(5))   -- true
+print(range:IsInRange(15))  -- false
+print(range:IsInRange("5")) -- true (converted to number)
+print(range:IsInRange("abc")) -- false (not a number)
+```
+
+### Practical Usage
+```lua
+-- Damage range for weapons
+local damageRange = NumberRange.new("<damage>(25-75) piercing <damage>")
+
+if damageRange:IsInRange(calculatedDamage) then
+    applyDamage(calculatedDamage, damageRange:GetValue())
+end
+
+-- Level requirement
+local levelReq = NumberRange.new("<level>(5-20) <level>")
+if not levelReq:IsInRange(playerLevel) then
+    showError("Level requirement not met")
+end
+```
+
+## Notes
+
+- Uses a custom text format with XML-like tags
+- Automatically converts input values to numbers for range checking
+- Returns nil for unparsed or invalid ranges
+- Primarily used for configuration and validation systems
+
+## See Also
+
+- [Mod](/classes/mod)
+- [SettingsKeycode](/classes/settingskeycode)

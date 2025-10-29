@@ -1,0 +1,178 @@
+---
+title: "SettingsKeycode"
+description: "Handles keyboard input detection and macro combinations for settings and controls"
+---
+
+<Badge>Client</Badge>
+
+## Description
+
+The `SettingsKeycode` class provides keyboard input detection and macro key combinations. It's used for handling user input in settings menus and control bindings.
+
+## Constructor
+
+### new
+```lua
+SettingsKeycode.new(first: Enum.KeyCode, second: Enum.KeyCode?): SettingsKeycode
+```
+
+Creates a new SettingsKeycode instance.
+
+**Parameters:**
+- `first` (Enum.KeyCode): The primary key
+- `second` (Enum.KeyCode?): Optional secondary key for macros
+
+**Returns:** A new SettingsKeycode instance
+
+## Methods
+
+### IsMacroDown
+```lua
+boolean SettingsKeycode:IsMacroDown()
+```
+
+Returns whether both keys in a macro combination are currently pressed.
+
+**Returns:** `true` if both keys are down (or just the first key if no second key)
+
+### InputBegan
+```lua
+RBXScriptConnection SettingsKeycode:InputBegan(callback: () -> ())
+```
+
+Connects a callback that fires when the key/macro is pressed.
+
+**Parameters:**
+- `callback` (function): Function to call when input begins
+
+**Returns:** The event connection
+
+### InputChanged
+```lua
+RBXScriptConnection SettingsKeycode:InputChanged(callback: () -> ())
+```
+
+Connects a callback that fires when the key/macro state changes.
+
+**Parameters:**
+- `callback` (function): Function to call when input changes
+
+**Returns:** The event connection
+
+### InputEnded
+```lua
+RBXScriptConnection SettingsKeycode:InputEnded(callback: () -> ())
+```
+
+Connects a callback that fires when the key/macro is released.
+
+**Parameters:**
+- `callback` (function): Function to call when input ends
+
+**Returns:** The event connection
+
+## Static Methods
+
+### GetFirstKey
+```lua
+Enum.KeyCode SettingsKeycode.GetFirstKey(table)
+```
+
+Gets the first key from a key table.
+
+**Parameters:**
+- `table` (table): Key table with [1] and [2] indices
+
+**Returns:** The first key
+
+### GetSecondKey
+```lua
+Enum.KeyCode? SettingsKeycode.GetSecondKey(table)
+```
+
+Gets the second key from a key table.
+
+**Parameters:**
+- `table` (table): Key table with [1] and [2] indices
+
+**Returns:** The second key or nil
+
+### GetKey
+```lua
+Enum.KeyCode SettingsKeycode.GetKey(table, index: number)
+```
+
+Gets a key at a specific index from a key table.
+
+**Parameters:**
+- `table` (table): Key table
+- `index` (number): Index to retrieve
+
+**Returns:** The key at the specified index
+
+## Usage Examples
+
+### Single Key Binding
+```lua
+local keybind = SettingsKeycode.new(Enum.KeyCode.H)
+
+keybind:InputBegan(function()
+	print("H key pressed!")
+	-- Open help menu
+end)
+```
+
+### Macro Key Combination
+```lua
+local saveKeybind = SettingsKeycode.new(Enum.KeyCode.LeftControl, Enum.KeyCode.S)
+
+saveKeybind:InputBegan(function()
+	print("Ctrl+S pressed!")
+	-- Save current work
+end)
+```
+
+### Checking Key State
+```lua
+local jumpKey = SettingsKeycode.new(Enum.KeyCode.Space)
+
+-- Check if jump key is held
+RunService.Heartbeat:Connect(function()
+	if jumpKey:IsMacroDown() then
+		-- Apply jump force
+	end
+end)
+```
+
+### Multiple Key Bindings
+```lua
+local keybinds = {
+	help = SettingsKeycode.new(Enum.KeyCode.F1),
+	save = SettingsKeycode.new(Enum.KeyCode.LeftControl, Enum.KeyCode.S),
+	load = SettingsKeycode.new(Enum.KeyCode.LeftControl, Enum.KeyCode.O),
+}
+
+keybinds.help:InputBegan(function()
+	showHelpMenu()
+end)
+
+keybinds.save:InputBegan(function()
+	saveCurrentProject()
+end)
+
+keybinds.load:InputBegan(function()
+	loadProjectDialog()
+end)
+```
+
+## Notes
+
+- Automatically handles input processing checks
+- Supports both single keys and key combinations
+- Connections should be cleaned up when no longer needed
+- Primarily used in editor mode for settings and controls
+
+## See Also
+
+- [GUI Components](/gui/textbutton)
+- [Construct API](/modding/construct-api)

@@ -1,0 +1,67 @@
+---
+title: "Vision Framework Introduction"
+description: "Learn about the Vision framework, a modular framework for Roblox game development"
+---
+
+## Overview
+
+Vision is a modular framework designed for Roblox game development. It provides a structured way to organize and load libraries, manage services, and handle remote communication using Quadnet.
+
+## Key Features
+
+- **Modular Architecture**: Load libraries on-demand with safe requiring and error handling
+- **Service Management**: Register and retrieve services with optional initialization functions
+- **Remote Communication**: Simplified remote event and function handling with Quadnet integration
+- **Environment-Aware Loading**: Automatically loads server, client, or shared libraries based on the runtime environment
+- **Lazy Loading**: Load additional libraries from folders as needed
+
+## Core Components
+
+The framework consists of several core components:
+
+- **Libraries**: Pre-loaded modules for common functionality (Maid, Spring, Guard, etc.)
+- **Services**: User-defined services that can be registered and retrieved
+- **Remote System**: Wrapper around Quadnet for network communication
+- **Global State**: Shared state management through the `shared.Vision` table
+
+## Getting Started
+
+To use Vision in your Roblox game:
+
+1. Require the Vision module in your script
+2. Call `vision:start()` to initialize the framework and load libraries
+3. Access pre-loaded libraries through `vision.LibraryName`
+4. Use `vision:get("LibraryName")` to retrieve specific libraries
+5. Register services using `vision:Service(name, data)` for shared functionality
+
+## Example Usage
+
+```lua
+local vision = require(path.to.vision)
+
+-- Start the framework
+vision:start(true) -- Enable logging
+
+-- Access a pre-loaded library
+local maid = vision.Maid
+
+-- Get a library by name
+local customLib = vision:get("CustomLibrary")
+
+-- Register a service
+local myService = vision:Service("MyService", {
+    initialize = function()
+        print("Service initialized")
+    end
+})
+```
+
+## Architecture
+
+Vision follows a client-server-shared architecture:
+
+- **Server Libraries**: Loaded only on the server
+- **Client Libraries**: Loaded only on the client
+- **Shared Libraries**: Loaded on both server and client
+
+This ensures proper separation of concerns and prevents client-side code from accessing server-only functionality.

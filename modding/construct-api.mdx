@@ -1,0 +1,500 @@
+---
+title: "Using Construct API in Mods"
+description: "Master the Construct API for creating client-side mods with global service access"
+---
+
+## Construct API in Modding
+
+The Construct API is your gateway to the client-side ecosystem in Construct. It provides a centralized registry for accessing game services, managing UI, and integrating with core systems. All mods run in sandboxed virtual machines and can reference the API using `ConstructAPI` or the shorthand `capi`.
+
+## Getting Started with Construct API
+
+Access the Construct API in your sandboxed mod environment:
+
+```lua
+-- Method 1: Full name
+local ConstructAPI = require(ReplicatedStorage.Shared.Locations)
+
+-- Method 2: Shorthand (commonly used in mods)
+local capi = require(ReplicatedStorage.Shared.Locations)
+
+-- The API is already initialized by the client, just start using it
+local gui = capi:Get("Gui")
+local player = capi:Get("Player")
+```
+
+**Note:** In the sandboxed environment, you cannot directly access Roblox services. All game interactions must go through the approved Construct API.
+
+## Accessing Core Services
+
+### Essential Services Every Mod Needs
+
+```lua
+-- Player information
+local player = ConstructAPI:Get("Player")
+local plotId = ConstructAPI:Get("Plot")
+
+-- UI and interface
+local gui = ConstructAPI:Get("Gui")
+local notifications = ConstructAPI:Get("NotificationsService")
+
+-- Communication
+local remote = ConstructAPI:Get("Remote")
+local clientSignal = ConstructAPI:Get("Client")
+local dataPasser = ConstructAPI:Get("DataPasser")
+
+-- Build management
+local plotBase = ConstructAPI:Get("PlotBase")
+local plotBuild = ConstructAPI:Get("PlotBuild")
+```
+
+## Registering Mod Services
+
+Make your mod's functionality globally accessible:
+
+```lua
+-- Register your mod's main service
+ConstructAPI:Register("MyMod", {
+    version = "1.0.0",
+    author = "YourName",
+
+    initialize = function()
+        print("MyMod initialized!")
+    end,
+
+    getConfig = function()
+        return modConfig
+    end
+})
+
+-- Other mods can now access your service
+local myMod = ConstructAPI:Get("MyMod")
+myMod:initialize()
+```
+
+## Using the Custom Require System
+
+Leverage Construct's enhanced require system:
+
+```lua
+local customRequire = ConstructAPI:Get("require")
+
+-- Load modules safely with error handling
+local success, myModule = pcall(function()
+    return customRequire("MyMod/MyModule")
+end)
+
+if success and myModule then
+    myModule:init()
+else
+    warn("Failed to load MyMod/MyModule")
+end
+```
+
+## UI Integration
+
+Create and manage UI elements through the Construct API:
+
+```lua
+local gui = ConstructAPI:Get("Gui")
+local notifications = ConstructAPI:Get("NotificationsService")
+
+-- Create a mod UI container
+local modUI = Instance.new("Frame")
+modUI.Name = "MyModUI"
+modUI.Size = UDim2.fromScale(0.3, 0.4)
+modUI.Position = UDim2.fromScale(0.35, 0.3)
+modUI.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+modUI.Parent = gui
+
+-- Register your UI for cleanup
+ConstructAPI:Register("MyModUI", modUI)
+
+-- Use notifications
+notifications:Show("MyMod", "Mod loaded successfully!", 3)
+```
+
+## Block Configuration Access
+
+Retrieve configuration for blocks using the built-in helper:
+
+```lua
+local getConfig = ConstructAPI:Get("GetConfigForBlock")
+
+-- Get config for a specific block
+local blockConfig = getConfig(someBlockInstance)
+if blockConfig then
+    print("Block power:", blockConfig.Power)
+    print("Block color:", blockConfig.Color)
+end
+
+-- Get config by block name
+local engineConfig = getConfig("Engine")
+```
+
+## Plugin System Integration
+
+Work with Construct's plugin system:
+
+```lua
+local clientSignal = ConstructAPI:Get("Client")
+
+-- Listen for plugin events
+clientSignal:Connect(function(eventType, data)
+    if eventType == "PluginLoaded" then
+        print("Plugin loaded:", data.name)
+        -- Integrate with your mod
+    elseif eventType == "PluginUnloaded" then
+        print("Plugin unloaded:", data.name)
+        -- Clean up integration
+    end
+end)
+
+-- Request plugin operations
+clientSignal:Fire("RefreshPlugins")
+```
+
+## Server Communication
+
+Use the DataPasser for secure server communication:
+
+```lua
+local dataPasser = ConstructAPI:Get("DataPasser")
+
+-- Request data from server
+local success, serverData = pcall(function()
+    return dataPasser:InvokeServer("GetModData", {
+        modName = "MyMod",
+        playerId = player.UserId
+    })
+end)
+
+if success and serverData then
+    processServerData(serverData)
+end
+```
+
+## Atom System Integration
+
+Access the Atom system through Construct API:
+
+```lua
+local atom = ConstructAPI:Get("Atom")
+
+-- Register a custom block
+atom:AddFunctionality("MyModBlock", script.MyModBlock)
+
+-- Create block configuration
+local config = atom:NewConfigTemplate("MyModBlock")
+config:AddPropertyValue("SpecialPower", 9001)
+
+-- Launch builds using Atom
+local success = atom:Launch(buildModel, player.UserId, storage, callback)
+```
+
+## Fusion UI Components
+
+Use the pre-registered Fusion components:
+
+```lua
+local Fusion = ConstructAPI:Get("FusionComponents")
+local New, Children, OnEvent = Fusion.New, Fusion.Children, Fusion.OnEvent
+
+-- Create a Fusion UI
+local modWindow = New("Frame")({
+    Size = UDim2.fromScale(0.5, 0.6),
+    Position = UDim2.fromScale(0.25, 0.2),
+    BackgroundColor3 = Color3.fromRGB(30, 30, 30),
+
+    [Children] = {
+        New("TextLabel")({
+            Text = "My Mod Settings",
+            Size = UDim2.fromScale(1, 0.1),
+            BackgroundColor3 = Color3.fromRGB(50, 50, 50),
+        }),
+
+        New("TextButton")({
+            Text = "Close",
+            Size = UDim2.fromScale(0.3, 0.1),
+            Position = UDim2.fromScale(0.35, 0.85),
+
+            [OnEvent("Activated")] = function()
+                modWindow:Destroy()
+            end
+        })
+    }
+})
+
+modWindow.Parent = ConstructAPI:Get("Gui")
+```
+
+## Mod State Management
+
+Manage your mod's state through the registry:
+
+```lua
+-- Initialize mod state
+ConstructAPI:Register("MyModState", {
+    isActive = false,
+    settings = {
+        volume = 0.8,
+        effects = true,
+        theme = "dark"
+    },
+    activeInstances = {}
+})
+
+-- Access and modify state
+local modState = ConstructAPI:Get("MyModState")
+
+function toggleMod()
+    modState.isActive = not modState.isActive
+    if modState.isActive then
+        activateMod()
+    else
+        deactivateMod()
+    end
+end
+
+function updateSetting(key, value)
+    modState.settings[key] = value
+    saveSettings()
+end
+```
+
+## Resource Management
+
+Properly manage resources using the Construct API:
+
+```lua
+local modResources = ConstructAPI:Register("MyModResources", {})
+
+function registerResource(resourceType, resource)
+    if not modResources[resourceType] then
+        modResources[resourceType] = {}
+    end
+    table.insert(modResources[resourceType], resource)
+end
+
+function cleanupResources()
+    for resourceType, resources in pairs(modResources) do
+        for _, resource in ipairs(resources) do
+            if typeof(resource) == "Instance" and resource.Destroy then
+                resource:Destroy()
+            elseif typeof(resource) == "RBXScriptConnection" then
+                resource:Disconnect()
+            elseif type(resource) == "function" then
+                resource()
+            end
+        end
+    end
+    modResources = {}
+end
+
+-- Register cleanup on mod unload
+ConstructAPI:Get("Client"):Connect(function(eventType)
+    if eventType == "ModUnloading" then
+        cleanupResources()
+    end
+end)
+```
+
+## Best Practices for Construct API Mods
+
+### 1. Always Check Service Availability
+```lua
+local service = ConstructAPI:Get("SomeService")
+if not service then
+    warn("Required service SomeService not available")
+    return
+end
+```
+
+### 2. Use Unique Registration Keys
+```lua
+-- Prefix with your mod name
+ConstructAPI:Register("MyMod_Core", coreService)
+ConstructAPI:Register("MyMod_UI", uiService)
+ConstructAPI:Register("MyMod_Config", config)
+```
+
+### 3. Handle Network Errors Gracefully
+```lua
+local success, result = pcall(function()
+    return ConstructAPI:Get("DataPasser"):InvokeServer("Request", data)
+end)
+
+if not success then
+    -- Show user-friendly error
+    local notifications = ConstructAPI:Get("NotificationsService")
+    notifications:Show("Error", "Failed to connect to server", 5)
+end
+```
+
+### 4. Clean Up UI Elements
+```lua
+local gui = ConstructAPI:Get("Gui")
+local modFrame = Instance.new("Frame")
+modFrame.Name = "MyModFrame"
+modFrame.Parent = gui
+
+-- Register for cleanup
+ConstructAPI:Register("MyModUI", modFrame)
+
+-- Or manually clean up
+modFrame:Destroy()
+ConstructAPI:Register("MyModUI", nil) -- Remove from registry
+```
+
+### 5. Integrate with Notifications
+```lua
+local notifications = ConstructAPI:Get("NotificationsService")
+
+-- Success messages
+notifications:Show("MyMod", "Feature activated!", 3)
+
+-- Error messages
+notifications:Show("Error", "Something went wrong", 5, "error")
+
+-- Info messages
+notifications:Show("Info", "New update available", 10, "info")
+```
+
+### 6. Use Block Configuration Helpers
+```lua
+local getConfig = ConstructAPI:Get("GetConfigForBlock")
+
+-- Validate block before use
+local blockConfig = getConfig(myBlock)
+if blockConfig and blockConfig.Enabled then
+    activateBlock(myBlock, blockConfig)
+end
+```
+
+## Common Mod Patterns
+
+### UI Mod
+```lua
+local ConstructAPI = require(ReplicatedStorage.Shared.Locations)
+
+local UIMod = ConstructAPI:Register("MyUIMod", {
+    createSettingsPanel = function()
+        local gui = ConstructAPI:Get("Gui")
+        local Fusion = ConstructAPI:Get("FusionComponents")
+
+        local panel = Fusion.New("Frame")({
+            Name = "SettingsPanel",
+            Size = UDim2.fromScale(0.4, 0.5),
+            -- ... panel setup
+        })
+
+        panel.Parent = gui
+        return panel
+    end,
+
+    showNotification = function(message)
+        local notifications = ConstructAPI:Get("NotificationsService")
+        notifications:Show("MyUIMod", message, 3)
+    end
+})
+
+return UIMod
+```
+
+### Block Enhancement Mod
+```lua
+local ConstructAPI = require(ReplicatedStorage.Shared.Locations)
+local atom = ConstructAPI:Get("Atom")
+
+-- Enhance existing blocks
+local BlockEnhancer = ConstructAPI:Register("BlockEnhancer", {
+    enhanceBlock = function(blockName, enhancement)
+        local getConfig = ConstructAPI:Get("GetConfigForBlock")
+        local config = getConfig(blockName)
+
+        if config then
+            -- Apply enhancement
+            config.Enhanced = true
+            config.EnhancementData = enhancement
+
+            print("Enhanced block:", blockName)
+        end
+    end,
+
+    getEnhancedBlocks = function()
+        -- Return list of enhanced blocks
+        return enhancedBlocksList
+    end
+})
+
+-- Register with Atom system
+atom:AddFunctionality("EnhancedEngine", script.EnhancedEngine)
+
+return BlockEnhancer
+```
+
+### Data Management Mod
+```lua
+local ConstructAPI = require(ReplicatedStorage.Shared.Locations)
+
+local DataManager = ConstructAPI:Register("DataManager", {
+    _cache = {},
+
+    saveData = function(self, key, data)
+        self._cache[key] = data
+        -- Save to server
+        local dataPasser = ConstructAPI:Get("DataPasser")
+        dataPasser:InvokeServer("SaveModData", {
+            mod = "DataManager",
+            key = key,
+            data = data
+        })
+    end,
+
+    loadData = function(self, key)
+        if self._cache[key] then
+            return self._cache[key]
+        end
+
+        -- Load from server
+        local dataPasser = ConstructAPI:Get("DataPasser")
+        local success, data = pcall(function()
+            return dataPasser:InvokeServer("LoadModData", {
+                mod = "DataManager",
+                key = key
+            })
+        end)
+
+        if success and data then
+            self._cache[key] = data
+            return data
+        end
+    end
+})
+
+return DataManager
+```
+
+## Troubleshooting
+
+### Service Not Found
+- Check spelling of service names
+- Ensure services are registered before accessing
+- Verify mod load order
+
+### UI Not Appearing
+- Confirm GUI service is available
+- Check parent assignments
+- Verify visibility properties
+
+### Network Timeouts
+- Increase timeout values for slow connections
+- Implement retry logic
+- Provide offline fallbacks
+
+### Memory Issues
+- Clean up event connections
+- Destroy UI elements when done
+- Clear caches periodically
+
+The Construct API provides everything you need to create feature-rich client-side mods. Use it to access core services, manage UI, communicate with the server, and integrate with other systems seamlessly.

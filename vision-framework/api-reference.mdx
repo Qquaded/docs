@@ -1,0 +1,160 @@
+---
+title: "API Reference"
+description: "Complete API reference for Vision framework functions and methods"
+---
+
+## Core Functions
+
+### vision:get(modulescript: string)
+
+Retrieves a module by name from the libraries folder. This method uses safe requiring with error handling to prevent crashes.
+
+**Parameters:**
+- `modulescript` (string): The name of the module to retrieve
+
+**Returns:** The required module or `nil` if loading failed
+
+**Example:**
+```lua
+local myLibrary = vision:get("MyLibrary")
+if myLibrary then
+    myLibrary.doSomething()
+end
+```
+
+### vision:WaitForLibrary(name: string)
+
+Waits for a library to be loaded before returning it. Useful for ensuring dependencies are available.
+
+**Parameters:**
+- `name` (string): The name of the library to wait for
+
+**Returns:** The loaded library
+
+**Example:**
+```lua
+local logger = vision:WaitForLibrary("Logger")
+logger:info("Library loaded successfully")
+```
+
+### vision:Service(name: string, dataTable: table | function)
+
+Registers or retrieves a service. If the service doesn't exist, it creates one using the provided data.
+
+**Parameters:**
+- `name` (string): The name of the service
+- `dataTable` (table | function): Service data or initialization function
+
+**Returns:** The service instance
+
+**Example:**
+```lua
+-- Register with table
+local configService = vision:Service("Config", {
+    apiKey = "12345",
+    timeout = 30
+})
+
+-- Register with function
+local dataService = vision:Service("DataService", function(name, vision)
+    return {
+        save = function(data)
+            -- save logic
+        end
+    }
+end)
+```
+
+### vision:start(logs: boolean?)
+
+Initializes the Vision framework by loading all libraries based on the runtime environment.
+
+**Parameters:**
+- `logs` (boolean, optional): Whether to print loading logs
+
+**Example:**
+```lua
+-- Start with logging
+vision:start(true)
+
+-- Start silently
+vision:start()
+```
+
+### vision:lazyload(parent: Folder)
+
+Loads all ModuleScripts from a specified folder and adds them to the Vision namespace.
+
+**Parameters:**
+- `parent` (Folder): The folder containing modules to load
+
+**Example:**
+```lua
+local customLibs = game.Workspace.CustomLibraries
+vision:lazyload(customLibs)
+-- Now access as vision.CustomLibrary
+```
+
+### vision:remote(name: string)
+
+Creates a remote communication object using Quadnet for network events and functions.
+
+**Parameters:**
+- `name` (string): The name of the remote
+
+**Returns:** A remote object with Fire, Connect, and Destroy methods
+
+**Example:**
+```lua
+local remote = vision:remote("PlayerAction")
+
+-- On server
+remote:Fire(player, "jump", 10)
+
+-- On client
+remote:Connect(function(player, action, power)
+    print(player.Name .. " performed " .. action)
+end)
+```
+
+## Properties
+
+### vision.LoadedModules
+
+A table containing all successfully loaded modules to prevent duplicate requiring.
+
+### vision.Maid
+
+Pre-loaded Maid library for object cleanup management.
+
+### vision.Spring
+
+Pre-loaded Spring library for smooth animations and transitions.
+
+### vision.Guard
+
+Pre-loaded Guard library for type checking and validation.
+
+### vision.Player
+
+Server-side player management utilities.
+
+### vision.Highlight
+
+Shared highlighting functionality.
+
+### vision.Server
+
+Server-side framework components.
+
+### vision.GlobalMaid
+
+Global cleanup management.
+
+### vision.Logger
+
+Logging utility from ReplicatedStorage.
+
+### vision.Quadnet
+
+Network communication library.

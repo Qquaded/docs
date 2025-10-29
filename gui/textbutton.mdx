@@ -1,0 +1,140 @@
+---
+title: "TextButton"
+description: "Basic text button component for user interaction"
+---
+
+<Badge>Client</Badge>
+
+## Description
+
+TextButton is a basic interactive button component that displays text and responds to user clicks.
+
+## Properties
+
+### Inherits from BaseGui
+TextButton inherits all properties from [BaseGui](/gui/basegui).
+
+### Text
+```lua
+string
+```
+
+The text displayed on the button.
+
+### TextColor3
+```lua
+Color3
+```
+
+The color of the button text.
+
+### BackgroundColor3
+```lua
+Color3
+```
+
+The background color of the button.
+
+### BorderSizePixel
+```lua
+number
+```
+
+The size of the button border in pixels.
+
+### CornerRadius
+```lua
+UDim
+```
+
+The corner radius for rounded corners.
+
+## Events
+
+### Activated
+```lua
+RBXScriptSignal
+```
+
+Fires when the button is clicked.
+
+## Usage Examples
+
+### Basic Text Button
+```lua
+local TextButton = require(ReplicatedStorage.Shared.Gui.Components.TextButton)
+
+local button = TextButton.new({
+    Text = "Click me!",
+    Size = UDim2.fromScale(0.2, 0.1),
+    Position = UDim2.fromScale(0.4, 0.45),
+    BackgroundColor3 = Color3.fromRGB(100, 150, 255),
+    TextColor3 = Color3.new(1, 1, 1),
+    CornerRadius = UDim.new(0, 8)
+})
+
+button.Activated:Connect(function()
+    print("Button clicked!")
+end)
+
+button.Parent = game.Players.LocalPlayer.PlayerGui
+```
+
+### Styled Button with LuaCSS
+```lua
+local luacss = require(ReplicatedStorage.Shared.Libraries.LuaCSS)
+
+local styledButton = luacss.compileObject({
+    class = "TextButton",
+    Text = "Styled Button",
+    Size = UDim2.fromScale(0.25, 0.08),
+    style = "primaryButton"
+})
+
+styledButton.Activated:Connect(function()
+    handleButtonClick()
+end)
+
+styledButton.Parent = gui
+```
+
+### Button with Hover Effects
+```lua
+local button = luacss.compileObject({
+    class = "TextButton",
+    Text = "Hover me!",
+    Size = UDim2.fromScale(0.2, 0.1),
+    BackgroundColor3 = Color3.fromRGB(200, 200, 200),
+
+    states = {
+        MouseEnter = function(obj)
+            luacss.spring(obj, {
+                BackgroundColor3 = Color3.fromRGB(150, 150, 150)
+            })
+        end,
+
+        MouseLeave = function(obj)
+            luacss.spring(obj, {
+                BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+            })
+        end
+    }
+})
+
+button.Activated:Connect(function()
+    performAction()
+end)
+```
+
+## Notes
+
+- Automatically handles click detection and visual feedback
+- Supports styling through LuaCSS
+- Can be extended with custom states and animations
+- Integrates with Construct's theming system
+
+## See Also
+
+- [BaseGui](/gui/basegui)
+- [ImageButton](/gui/imagebutton)
+- [LuaCSS](/libraries/luacss)

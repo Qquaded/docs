@@ -1,0 +1,515 @@
+---
+title: "Atom System API Reference"
+description: "Complete API reference for Atom system methods, properties, and configuration"
+---
+
+## Core Methods
+
+### Atom.new()
+
+Creates a new Atom instance with default configuration.
+
+**Returns:** A new Atom instance
+
+**Example:**
+```lua
+local atom = Atom.new()
+```
+
+### atom:Shared()
+
+Stores the Atom instance in the shared environment for global access.
+
+**Returns:** The Atom instance (for chaining)
+
+**Example:**
+```lua
+atom:Shared()
+-- Now accessible via shared.Atom
+```
+
+### atom:DeployOnShared()
+
+Replaces the current instance with the one stored in shared environment.
+
+**Returns:** The shared Atom instance
+
+**Example:**
+```lua
+local atom = Atom.new():DeployOnShared()
+```
+
+## Network Identifier (NID) Management
+
+### Atom.RegisterNID(c: Instance)
+
+Registers a Network Identifier for the given instance.
+
+**Parameters:**
+- `c` (Instance): The instance to register
+
+**Returns:** The generated NID string
+
+**Example:**
+```lua
+local nid = Atom.RegisterNID(myPart)
+print("Registered NID:", nid)
+```
+
+### Atom.FindUsingNID(id: string, parent: Instance)
+
+Finds an instance with the specified NID within the given parent.
+
+**Parameters:**
+- `id` (string): The NID to search for
+- `parent` (Instance): The parent instance to search in
+
+**Returns:** The found instance or nil
+
+**Example:**
+```lua
+local part = Atom.FindUsingNID("abc123", workspace)
+if part then
+    print("Found part:", part.Name)
+end
+```
+
+### Atom.NIDExists(id: string)
+
+Checks if an instance with the given NID exists in the workspace.
+
+**Parameters:**
+- `id` (string): The NID to check
+
+**Returns:** boolean indicating existence
+
+**Example:**
+```lua
+if Atom.NIDExists("abc123") then
+    print("NID exists")
+end
+```
+
+### atom.GetNID(block: Instance)
+
+Retrieves the NID of a block instance.
+
+**Parameters:**
+- `block` (Instance): The block instance
+
+**Returns:** The NID string or nil
+
+**Example:**
+```lua
+local nid = atom.GetNID(myBlock)
+```
+
+## Block Registration and Configuration
+
+### atom:Register(block: Instance)
+
+Registers a physical block instance with the Atom system.
+
+**Parameters:**
+- `block` (Instance): The block to register
+
+**Returns:** The NID of the registered block
+
+**Example:**
+```lua
+local nid = atom:Register(myBlock)
+```
+
+### atom:RegisterDigitalBlock(blockName: string, blockAttributes: any, extraProperties: {}?)
+
+Registers a digital/virtual block with the system.
+
+**Parameters:**
+- `blockName` (string): Name of the block type
+- `blockAttributes` (any): Block attributes
+- `extraProperties` (table, optional): Additional properties
+
+**Returns:** The NID of the registered digital block
+
+**Example:**
+```lua
+local nid = atom:RegisterDigitalBlock("Laser", {power = 100}, {color = "red"})
+```
+
+### atom:AddFunctionality(BlockName: string, module: ModuleScript)
+
+Adds functionality module for a block type.
+
+**Parameters:**
+- `BlockName` (string): The block type name
+- `module` (ModuleScript): The functionality module
+
+**Example:**
+```lua
+atom:AddFunctionality("Button", script.ButtonModule)
+```
+
+### atom.AddDigitalModule(blockName: string, data: {})
+
+Adds a digital module for programmatic block functionality.
+
+**Parameters:**
+- `blockName` (string): The block type name
+- `data` (table): The module data
+
+**Example:**
+```lua
+atom.AddDigitalModule("Sensor", {
+    Activated = function() print("Sensor triggered") end
+})
+```
+
+## Configuration Management
+
+### atom.NewConfigTemplate(name: string)
+
+Creates a new configuration template for a block type.
+
+**Parameters:**
+- `name` (string): The block type name
+
+**Returns:** Configuration template object with methods:
+- `AddPropertyValue(property, value)`: Adds a property
+- `RemoveProperty(property)`: Removes a property
+- `Set(config)`: Sets the entire config
+- `RemoveAllProperties()`: Clears all properties
+- `Destroy()`: Removes the template
+
+**Example:**
+```lua
+local config = atom:NewConfigTemplate("Engine")
+config:AddPropertyValue("Power", 100)
+config:AddPropertyValue("FuelType", "Electric")
+```
+
+### atom:AddBlockConfig(BlockName: string, config: {})
+
+Adds a complete configuration for a block type.
+
+**Parameters:**
+- `BlockName` (string): The block type name
+- `config` (table): The configuration object
+
+**Example:**
+```lua
+atom:AddBlockConfig("Wheel", {
+    Friction = 0.8,
+    Mass = 10,
+    Material = "Plastic"
+})
+```
+
+### atom:GetBlockConfig(block: Instance | string)
+
+Retrieves the configuration for a block.
+
+**Parameters:**
+- `block` (Instance | string): The block instance or NID
+
+**Returns:** Deep clone of the block configuration
+
+**Example:**
+```lua
+local config = atom:GetBlockConfig(myBlock)
+print("Power:", config.Power)
+```
+
+### atom:GetBlockConfigTemplate(blockName: string)
+
+Gets the configuration template for a block type.
+
+**Parameters:**
+- `blockName` (string): The block type name
+
+**Returns:** The configuration template
+
+**Example:**
+```lua
+local template = atom:GetBlockConfigTemplate("Engine")
+```
+
+## Runtime Property Management
+
+### atom:SetPropertyValue(block: Instance | string, property: string, value: any)
+
+Sets a property value for a block at runtime.
+
+**Parameters:**
+- `block` (Instance | string): The block instance or NID
+- `property` (string): The property name
+- `value` (any): The new value
+
+**Example:**
+```lua
+atom:SetPropertyValue(myEngine, "Power", 150)
+```
+
+### atom:ManualSetPropertyValue(runtimeId: string, property: string, value: any)
+
+Manually sets a property value using the runtime ID.
+
+**Parameters:**
+- `runtimeId` (string): The runtime identifier
+- `property` (string): The property name
+- `value` (any): The new value
+
+**Example:**
+```lua
+atom:ManualSetPropertyValue("abc123", "Active", true)
+```
+
+### atom.GetRuntimeConfig(identifier: string, nid: string)
+
+Gets the runtime configuration for a specific block in a build.
+
+**Parameters:**
+- `identifier` (string): The build identifier
+- `nid` (string): The block NID
+
+**Returns:** The runtime configuration
+
+**Example:**
+```lua
+local config = atom.GetRuntimeConfig("player123", "block456")
+```
+
+### atom.GetRuntimeValue(identifier: string, nid: string, property: string)
+
+Gets a specific runtime property value.
+
+**Parameters:**
+- `identifier` (string): The build identifier
+- `nid` (string): The block NID
+- `property` (string): The property name
+
+**Returns:** The property value
+
+**Example:**
+```lua
+local power = atom.GetRuntimeValue("player123", "engine1", "Power")
+```
+
+### atom.SetRuntimeBlockValue(identifier: string, nid: string, property: string, value: any)
+
+Sets a runtime property value for a block.
+
+**Parameters:**
+- `identifier` (string): The build identifier
+- `nid` (string): The block NID
+- `property` (string): The property name
+- `value` (any): The new value
+
+**Example:**
+```lua
+atom.SetRuntimeBlockValue("player123", "engine1", "Power", 200)
+```
+
+## Build Management
+
+### atom:RegisterBuild(build: Model)
+
+Registers all blocks in a build model.
+
+**Parameters:**
+- `build` (Model): The build model to register
+
+**Example:**
+```lua
+atom:RegisterBuild(myBuildModel)
+```
+
+### atom:Launch(buildarg: Model, identifier: string, storage: any, callback: function?, ...)
+
+Launches a build with network synchronization.
+
+**Parameters:**
+- `buildarg` (Model): The build model to launch
+- `identifier` (string): Unique identifier for the build
+- `storage` (any): Storage for serialization
+- `callback` (function, optional): Callback for each part
+- `...` (varargs): Additional arguments
+
+**Returns:** `true` on success, error string on failure
+
+**Example:**
+```lua
+local success = atom:Launch(buildModel, player.UserId, storage, function(part)
+    print("Processing part:", part.Name)
+end)
+```
+
+### atom:Despawn(buildarg: Model, storage: any, identifier: string)
+
+Despawns a build and cleans up resources.
+
+**Parameters:**
+- `buildarg` (Model): The build model to despawn
+- `storage` (any): Storage for serialization
+- `identifier` (string): The build identifier
+
+**Returns:** Success message or error string
+
+**Example:**
+```lua
+local result = atom:Despawn(buildModel, storage, player.UserId)
+if result == "Success" then
+    print("Build despawned")
+end
+```
+
+## Utility Methods
+
+### atom:ActivateFunction(block: string, name: string, func: string, buildarg: Model?, identifier: string?, ...)
+
+Activates a specific function on a block.
+
+**Parameters:**
+- `block` (string): The block identifier
+- `name` (string): The block name
+- `func` (string): The function name
+- `buildarg` (Model, optional): The build model
+- `identifier` (string, optional): The build identifier
+- `...` (varargs): Additional arguments
+
+**Example:**
+```lua
+atom:ActivateFunction("block123", "Button", "Press", buildModel, "player123")
+```
+
+### atom:AddIgnoredInstance(ignored: string | Instance)
+
+Adds an instance to be ignored during welding operations.
+
+**Parameters:**
+- `ignored` (string | Instance): The instance or name to ignore
+
+**Example:**
+```lua
+atom:AddIgnoredInstance("Hitbox")
+atom:AddIgnoredInstance(mySpecialPart)
+```
+
+### atom:ById(id: string)
+
+Gets a deep clone of block data by ID.
+
+**Parameters:**
+- `id` (string): The block ID
+
+**Returns:** Deep clone of the block data
+
+**Example:**
+```lua
+local data = atom:ById("block123")
+```
+
+### atom:DeleteBlockTemplate(blockname: string)
+
+Deletes a block configuration template.
+
+**Parameters:**
+- `blockname` (string): The block type name
+
+**Example:**
+```lua
+atom:DeleteBlockTemplate("OldBlock")
+```
+
+## Properties
+
+### Atom.NIDKey
+The attribute key used for storing Network Identifiers. Default: `"AtomId"`
+
+### atom._BlockFunctionalities
+Table storing block functionality modules.
+
+### atom._BlockConfigs
+Table storing block configuration templates.
+
+### atom._Blocks
+Table storing registered block instances.
+
+### atom._Runtime
+Table storing runtime configurations for active builds.
+
+### atom._DigitalModulescripts
+Table storing digital block modules.
+
+### atom._DigitalBlocks
+Table storing digital block instances.
+
+### atom._Cleaners
+Table storing cleanup objects for active builds.
+
+### atom._activeNetworkPromises
+Table storing network promises for active operations.
+
+### atom._ConcurrentLaunches
+Table preventing concurrent launches of the same build.
+
+### atom._Backups
+Table storing backup models for despawning.
+
+### atom.CallbackWelded
+Callback function called when parts are welded. Default: empty function.
+
+### atom.DeleteWeldWithParts
+Table of parts to ignore during welding operations.
+
+### atom.BuildParent
+Parent location for server-side builds. Default: `ServerScriptService`
+
+### atom.WeldOnLaunch
+Whether to create welds when launching. Default: `true`
+
+### atom.GetConfigCallback
+Callback for retrieving block configurations. Default: returns empty table.
+
+### atom.OnBlockFinishCallback
+Callback called when block initialization finishes.
+
+### atom.SecurityChecksSerializedBuild
+Server-side security validation function. Default: always approves.
+
+## Network Codes
+
+The Atom system uses predefined network codes for communication:
+
+### Launch Codes
+- `ncLaunchRequest`: Client requesting to launch
+- `ncLaunchAccepted`: Server accepting launch request
+- `ncLaunchDenied`: Server denying launch request
+- `ncLaunchTimeout`: Launch operation timed out
+
+### Despawn Codes
+- `ncDespawnRequest`: Server requesting to despawn
+- `ncDespawnAccepted`: Client accepting despawn request
+- `ncDespawnDenied`: Client denying despawn request
+- `ncDespawnTimeout`: Despawn operation timed out
+
+## Best Practices
+
+1. **Always check return values** from Launch and Despawn operations
+2. **Use meaningful identifiers** for builds (player UserId recommended)
+3. **Implement security checks** on the server for production use
+4. **Clean up resources** by calling Despawn when builds are no longer needed
+5. **Handle network timeouts** gracefully in your game logic
+6. **Use digital blocks** for complex programmatic behavior
+7. **Register functionalities** before attempting to launch builds
+
+## Error Handling
+
+The Atom system provides detailed error messages:
+
+- `"Cannot launch again"`: Build already launching
+- `"Player not found"`: Invalid player identifier
+- `"Launch request timed out or failed"`: Network timeout
+- `"Cannot despawn an already despawned creation"`: Build not active
+- `"Build not available for unpack"`: Build model destroyed
+
+Always check the return values from Launch and Despawn methods and handle errors appropriately in your game logic.

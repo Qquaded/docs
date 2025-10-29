@@ -1,0 +1,209 @@
+---
+title: "Color"
+description: "Parses and creates color values in RGB and hexadecimal formats"
+---
+
+<Badge>Client and Server</Badge>
+
+## Description
+
+The Color class provides functionality for parsing and creating color values using custom text formats for RGB and hexadecimal color representations.
+
+## Constructor
+
+### new
+```lua
+Color Color.new(text: string)
+```
+
+Creates a new Color instance by parsing the input text.
+
+**Parameters:**
+- `text` (string): The formatted color text to parse
+
+**Returns:** A new Color instance
+
+## Properties
+
+### Raw
+```lua
+string
+```
+
+The original input text.
+
+### R
+```lua
+number?
+```
+
+The red component (0-255).
+
+### G
+```lua
+number?
+```
+
+The green component (0-255).
+
+### B
+```lua
+number?
+```
+
+The blue component (0-255).
+
+### Hex
+```lua
+string?
+```
+
+The hexadecimal representation (e.g., "#FF0000").
+
+## Methods
+
+### GetR
+```lua
+number? Color:GetR()
+```
+
+Returns the red component.
+
+**Returns:** Red value (0-255) or nil if not parsed
+
+### GetG
+```lua
+number? Color:GetG()
+```
+
+Returns the green component.
+
+**Returns:** Green value (0-255) or nil if not parsed
+
+### GetB
+```lua
+number? Color:GetB()
+```
+
+Returns the blue component.
+
+**Returns:** Blue value (0-255) or nil if not parsed
+
+### GetHex
+```lua
+string? Color:GetHex()
+```
+
+Returns the hexadecimal representation.
+
+**Returns:** Hex string (e.g., "#FF0000") or nil if not parsed
+
+### GetColor
+```lua
+Color3? Color:GetColor()
+```
+
+Returns a Roblox Color3 object.
+
+**Returns:** Color3 object or nil if invalid
+
+## Static Methods
+
+### create
+```lua
+string Color.create(input: table | string)
+```
+
+Creates a formatted color string.
+
+**Parameters:**
+- `input` (table | string): Either `{r, g, b}` table or hex string
+
+**Returns:** The formatted color string
+
+## Format Specifications
+
+### RGB Format
+```
+<color:RGB> r, g, b <color>
+```
+Where `r`, `g`, `b` are integers from 0-255.
+
+### Hexadecimal Format
+```
+<color:#hex> <color>
+```
+Where `hex` is a 6-character hexadecimal string.
+
+## Usage Examples
+
+### Parsing Colors
+```lua
+local Color = require(ReplicatedStorage.Shared.Classes.Color)
+
+-- Parse RGB color
+local rgbColor = Color.new("<color:RGB> 255, 0, 0 <color>")
+print(rgbColor:GetR())    -- 255
+print(rgbColor:GetG())    -- 0
+print(rgbColor:GetB())    -- 0
+print(rgbColor:GetHex())  -- "#FF0000"
+
+-- Parse hex color
+local hexColor = Color.new("<color:#00FF00> <color>")
+print(hexColor:GetHex())  -- "#00FF00"
+print(hexColor:GetR())    -- 0
+print(hexColor:GetG())    -- 255
+print(hexColor:GetB())    -- 0
+```
+
+### Creating Colors
+```lua
+-- Create from RGB values
+local rgbText = Color.create({255, 165, 0})
+print(rgbText) -- "<color:RGB> 255, 165, 0 <color>"
+
+-- Create from hex string
+local hexText = Color.create("#FF4500")
+print(hexText) -- "<color:#FF4500> <color>"
+```
+
+### Converting to Roblox Color3
+```lua
+local color = Color.new("<color:#FF69B4> <color>")
+local robloxColor = color:GetColor()
+
+if robloxColor then
+    part.Color = robloxColor
+end
+```
+
+### Practical Usage
+```lua
+-- Theme color parsing
+local themeColors = {
+    primary = Color.new("<color:#007BFF> <color>"),
+    secondary = Color.new("<color:#6C757D> <color>"),
+    success = Color.new("<color:#28A745> <color>")
+}
+
+-- Apply theme colors
+button.BackgroundColor3 = themeColors.primary:GetColor()
+textLabel.TextColor3 = themeColors.secondary:GetColor()
+
+-- Create custom colors
+local customColor = Color.create({100, 150, 200})
+local customColorObj = Color.new(customColor)
+gui.BackgroundColor3 = customColorObj:GetColor()
+```
+
+## Notes
+
+- Supports both RGB and hexadecimal color formats
+- Automatically converts between formats
+- Returns nil for invalid or unparsed colors
+- Primarily used for configuration and theming systems
+
+## See Also
+
+- [NumberRange](/classes/numberrange)
+- [LuaCSS](/libraries/luacss)

@@ -1,0 +1,68 @@
+---
+title: "Construct API Introduction"
+description: "Learn about the Construct API, a centralized registry system for managing client-side services and resources"
+---
+
+## Overview
+
+The Construct API is a centralized registry system used in the Construct game client to manage and access various services, modules, components, and data. It acts as a global container that allows different parts of the client-side code to register and retrieve shared resources efficiently.
+
+## Key Features
+
+- **Centralized Registry**: Single point of access for all client-side services and resources
+- **Fluent Interface**: Chain multiple registrations together for cleaner code
+- **Automatic Registration**: Automatically registers ModuleScripts found in the game hierarchy
+- **Dynamic Loading**: Supports plugin loading and unloading at runtime
+- **Type Safety**: Supports registration of any Lua value type
+
+## Core Concepts
+
+### Registry Pattern
+The API follows a simple key-value registry pattern where you register items with string keys and retrieve them later. This eliminates the need for complex require paths and provides a consistent interface.
+
+### Client-Side Focus
+The Construct API is designed specifically for client-side use in Roblox games. It integrates with Vision Framework, Atom system, and other client-side services.
+
+### Fast Access
+The Construct API is an integrated library in the plugin IDE, so you can reference ConstructAPI or capi in your plugins without requiring it.
+
+### Integration Points
+- **Vision Framework**: Uses Vision for remote communication and UI management
+- **Atom System**: Manages block functionality and interactions
+- **Plugin System**: Handles dynamic loading and unloading of client plugins
+- **Notification Service**: Provides user alerts and messaging
+
+## Getting Started
+
+To use the Construct API in your client code:
+
+1. Require the Construct API from ReplicatedStorage
+2. Register your services and components during initialization
+3. Access registered items using the Get method
+4. Use the custom require function for consistent module loading
+
+## Example Usage
+
+```lua
+-- Register core services
+ConstructAPI:Register("MyService", myServiceInstance)
+         :Register("Config", gameConfig)
+
+-- Retrieve registered items
+local service = ConstructAPI:Get("MyService")
+local config = ConstructAPI:Get("Config")
+
+-- Use custom require function
+local myModule = ConstructAPI:Get("require")("MyModule")
+```
+
+## Architecture
+
+The Construct API initializes during client startup and registers essential services:
+
+- **Core Services**: GUI, Player, Plot, Remote connections
+- **Libraries**: Vision libraries, Fusion components
+- **Utilities**: Custom require function, block configuration helpers
+- **Dynamic Components**: Plugins and modules loaded at runtime
+
+This architecture ensures all client systems have access to shared resources while maintaining clean separation of concerns.

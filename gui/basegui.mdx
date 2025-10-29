@@ -1,0 +1,118 @@
+---
+title: "BaseGui"
+description: "The foundation component for all GUI elements in Construct"
+---
+
+<Badge>Client</Badge>
+
+## Description
+
+BaseGui is the foundation component for all GUI elements in Construct. It provides basic GUI setup, lifecycle management, and property handling that other GUI components build upon.
+
+## Properties
+
+### Inherits from Instance
+BaseGui inherits all properties from the Roblox Instance class.
+
+### Common Properties
+- `Name` (string): The object's name
+- `Parent` (Instance): The parent object
+- `Visible` (boolean): Whether the GUI is visible
+- `ZIndex` (number): Display order
+
+## Methods
+
+### Constructor
+```lua
+BaseGui.new(config: table?): BaseGui
+```
+
+Creates a new BaseGui instance.
+
+**Parameters:**
+- `config` (table?): Optional configuration table
+
+**Returns:** New BaseGui instance
+
+## Usage Examples
+
+### Basic GUI Creation
+```lua
+local BaseGui = require(ReplicatedStorage.Shared.Gui.Components.BaseGui)
+
+local myGui = BaseGui.new({
+	Name = "MyCustomGui",
+	Visible = true,
+	ZIndex = 1,
+})
+
+myGui.Parent = game.Players.LocalPlayer.PlayerGui
+```
+
+### Extending BaseGui
+```lua
+local MyCustomGui = BaseGui.new()
+
+function MyCustomGui:Init()
+	-- Custom initialization
+	self.frame = Instance.new("Frame")
+	self.frame.Size = UDim2.fromScale(0.5, 0.5)
+	self.frame.Position = UDim2.fromScale(0.25, 0.25)
+	self.frame.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+	self.frame.Parent = self
+
+	-- Add custom functionality
+	self:SetupEvents()
+end
+
+function MyCustomGui:SetupEvents()
+	self.frame.MouseEnter:Connect(function()
+		self.frame.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
+	end)
+
+	self.frame.MouseLeave:Connect(function()
+		self.frame.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+	end)
+end
+
+return MyCustomGui
+```
+
+### Integration with LuaCSS
+```lua
+local luacss = require(ReplicatedStorage.Shared.Libraries.LuaCSS)
+
+local styledGui = luacss.compileObject({
+	class = "Frame",
+	Name = "StyledGui",
+	Size = UDim2.fromScale(0.8, 0.6),
+	Position = UDim2.fromScale(0.1, 0.2),
+	BackgroundColor3 = Color3.fromRGB(40, 40, 40),
+	BorderSizePixel = 0,
+
+	spawn = {
+		Title = {
+			class = "TextLabel",
+			Text = "My GUI",
+			Size = UDim2.fromScale(1, 0.15),
+			TextColor3 = Color3.new(1, 1, 1),
+			BackgroundTransparency = 1,
+		}
+	}
+})
+
+styledGui.Parent = game.Players.LocalPlayer.PlayerGui
+```
+
+## Notes
+
+- BaseGui provides the foundation for all GUI components
+- Automatically handles basic lifecycle management
+- Can be extended to create custom GUI components
+- Integrates seamlessly with LuaCSS styling system
+
+## See Also
+
+- [LuaCSS](/libraries/luacss)
+- [TextButton](/gui/textbutton)
+- [Window](/gui/window)

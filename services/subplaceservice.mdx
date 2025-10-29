@@ -1,0 +1,105 @@
+---
+title: "SubplaceService"
+description: "Manages different game subplaces and their specific behaviors"
+---
+
+<Badge>Client and Server</Badge>
+
+## Description
+
+The SubplaceService manages different subplaces within Construct (Editor, Main Menu, Game) and provides environment-specific functionality and configurations.
+
+## Methods
+
+### IsEditor
+```lua
+boolean SubplaceService:IsEditor()
+```
+
+Checks if the current environment is the editor mode.
+
+**Returns:** `true` if running in editor, `false` otherwise
+
+### IsMainMenu
+```lua
+boolean SubplaceService:IsMainMenu()
+```
+
+Checks if the current environment is the main menu.
+
+**Returns:** `true` if running in main menu, `false` otherwise
+
+### IsGame
+```lua
+boolean SubplaceService:IsGame()
+```
+
+Checks if the current environment is the game world.
+
+**Returns:** `true` if running in game, `false` otherwise
+
+## Usage Examples
+
+### Environment-Specific Code
+```lua
+local SubplaceService = require(ReplicatedStorage.Services.SubplaceService)
+
+if SubplaceService:IsEditor() then
+	-- Editor-only functionality
+	print("Running in editor mode")
+	loadEditorTools()
+elseif SubplaceService:IsMainMenu() then
+	-- Main menu functionality
+	print("Running in main menu")
+	loadMainMenuUI()
+elseif SubplaceService:IsGame() then
+	-- Game world functionality
+	print("Running in game world")
+	loadGameSystems()
+end
+```
+
+### Conditional Loading
+```lua
+local capi = require(ReplicatedStorage.Shared.Locations)
+
+if SubplaceService:IsEditor() then
+	-- Load editor-specific classes
+	local ModClass = capi:Get("Classes.Mod")
+	local SettingsKeycode = capi:Get("Classes.SettingsKeycode")
+
+	-- Editor-specific initialization
+elseif SubplaceService:IsGame() then
+	-- Load game-specific services
+	local Atom = capi:Get("Libraries.Atom")
+	local Vision = require(ReplicatedStorage.Vision)
+
+	-- Game-specific initialization
+end
+```
+
+### UI Adaptation
+```lua
+local gui = capi:Get("Gui")
+
+if SubplaceService:IsEditor() then
+	-- Show editor UI
+	local editorPanel = createEditorInterface()
+	editorPanel.Parent = gui
+elseif SubplaceService:IsGame() then
+	-- Show game UI
+	local gameHUD = createGameHUD()
+	gameHUD.Parent = gui
+end
+```
+
+## Notes
+
+- Used to determine which systems and UI to load
+- Helps prevent loading unnecessary code in different environments
+- Essential for proper mod behavior across different game states
+
+## See Also
+
+- [Construct API](/modding/construct-api)
+- [Official Mod System](/modding/mod-system)

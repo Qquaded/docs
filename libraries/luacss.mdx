@@ -1,0 +1,326 @@
+---
+title: "LuaCSS"
+description: "Advanced UI styling and component system inspired by CSS"
+---
+
+<Badge>Client</Badge>
+
+## Description
+
+LuaCSS is an advanced UI styling and component system inspired by CSS. It provides a declarative way to create and style user interfaces with reactive properties, components, and theming.
+
+## Core Functions
+
+### edit
+```lua
+Instance luacss.edit(object: Instance, properties: table)
+```
+
+Applies properties to a UI object.
+
+**Parameters:**
+- `object` (Instance): The UI object to modify
+- `properties` (table): Properties to apply
+
+**Returns:** The modified object
+
+### compileObject
+```lua
+Instance, table, table luacss.compileObject(properties: table, logs?: boolean)
+```
+
+Creates a new UI object with the specified properties.
+
+**Parameters:**
+- `properties` (table): Object properties including class
+- `logs` (boolean?): Enable logging
+
+**Returns:** The created object, virtual object wrapper, and properties
+
+### style
+```lua
+table luacss.style(name: string, properties: table)
+```
+
+Registers a reusable style.
+
+**Parameters:**
+- `name` (string): Style name
+- `properties` (table): Style properties
+
+**Returns:** The registered style
+
+### component
+```lua
+table luacss.component(name: string, data: table)
+```
+
+Registers a reusable component.
+
+**Parameters:**
+- `name` (string): Component name
+- `data` (table): Component properties
+
+**Returns:** Component wrapper with methods
+
+### addEnvValue
+```lua
+table luacss.addEnvValue(name: string, value: any)
+```
+
+Adds a reactive environment value.
+
+**Parameters:**
+- `name` (string): Environment value name
+- `value` (any): Initial value
+
+**Returns:** Environment value object
+
+### spring
+```lua
+luacss.spring(object: Instance, properties: table)
+```
+
+Applies spring animation to properties.
+
+**Parameters:**
+- `object` (Instance): Target object
+- `properties` (table): Properties to animate
+
+### theme
+```lua
+table luacss.theme(data: table)
+```
+
+Creates a theme object for managing multiple environment values.
+
+**Parameters:**
+- `data` (table): Theme data
+
+**Returns:** Theme object
+
+## Key Properties
+
+### class
+```lua
+string
+```
+
+The Roblox class name for the object (e.g., "TextButton", "Frame").
+
+### style
+```lua
+string | table
+```
+
+Applies a registered style or component.
+
+### multistyle
+```lua
+{string}
+```
+
+Applies multiple registered styles.
+
+### id
+```lua
+string
+```
+
+Unique identifier for the object.
+
+### spawn
+```lua
+table
+```
+
+Child objects to create.
+
+### editChildren
+```lua
+table
+```
+
+Modifies existing child objects.
+
+### states
+```lua
+table
+```
+
+Defines object states and their behaviors.
+
+## Usage Examples
+
+### Basic Object Creation
+```lua
+local luacss = require(ReplicatedStorage.Shared.Libraries.LuaCSS)
+
+local button = luacss.compileObject({
+	class = "TextButton",
+	Text = "Click me!",
+	Size = UDim2.fromScale(0.2, 0.1),
+	BackgroundColor3 = Color3.fromRGB(100, 150, 255),
+})
+
+button.Parent = gui
+```
+
+### Using Styles
+```lua
+-- Register a style
+luacss.style("primaryButton", {
+	BackgroundColor3 = Color3.fromRGB(100, 150, 255),
+	TextColor3 = Color3.new(1, 1, 1),
+	CornerRadius = UDim.new(0, 8),
+	BorderSizePixel = 0,
+})
+
+-- Use the style
+local button = luacss.compileObject({
+	class = "TextButton",
+	Text = "Primary Action",
+	style = "primaryButton",
+	Size = UDim2.fromScale(0.3, 0.1),
+})
+```
+
+### Reactive Environment Values
+```lua
+-- Add reactive color
+luacss.addEnvValue("primaryColor", Color3.fromRGB(100, 150, 255))
+
+-- Use in styling
+local button = luacss.compileObject({
+	class = "TextButton",
+	Text = "Themed Button",
+	BackgroundColor3 = luacss.value("primaryColor"),
+})
+
+-- Change the color reactively
+local primaryColor = luacss.getEnvValueObject("primaryColor")
+primaryColor.Set(Color3.fromRGB(255, 100, 100)) -- Button color updates automatically
+```
+
+### Components
+```lua
+-- Register a component
+luacss.component("IconButton", {
+	class = "ImageButton",
+	Size = UDim2.fromScale(0.1, 0.1),
+	BackgroundTransparency = 1,
+})
+
+-- Use the component
+local iconButton = luacss.compileObject({
+	style = "IconButton",
+	Image = "rbxassetid://123456789",
+})
+```
+
+### Complex Layout
+```lua
+local panel = luacss.compileObject({
+	class = "Frame",
+	Size = UDim2.fromScale(0.8, 0.6),
+	Position = UDim2.fromScale(0.1, 0.2),
+	BackgroundColor3 = Color3.fromRGB(40, 40, 40),
+
+	spawn = {
+		Title = {
+			class = "TextLabel",
+			Text = "Settings Panel",
+			Size = UDim2.fromScale(1, 0.15),
+			TextColor3 = Color3.new(1, 1, 1),
+			BackgroundTransparency = 1,
+		},
+
+		Content = {
+			class = "Frame",
+			Size = UDim2.fromScale(1, 0.7),
+			Position = UDim2.fromScale(0, 0.15),
+			BackgroundTransparency = 1,
+		}
+	}
+})
+```
+
+### Spring Animations
+```lua
+local button = luacss.compileObject({
+	class = "TextButton",
+	Text = "Animate me!",
+	Size = UDim2.fromScale(0.2, 0.1),
+})
+
+-- Animate size change
+luacss.spring(button, {
+	Size = UDim2.fromScale(0.3, 0.15)
+})
+```
+
+## Advanced Features
+
+### Theme Management
+```lua
+local theme = luacss.theme({
+	primary = Color3.fromRGB(100, 150, 255),
+	secondary = Color3.fromRGB(255, 100, 100),
+	fontSize = 14,
+})
+
+-- Apply theme
+theme.Set({
+	primary = Color3.fromRGB(50, 200, 100),
+	fontSize = 16,
+})
+```
+
+### State Management
+```lua
+local button = luacss.compileObject({
+	class = "TextButton",
+	Text = "Hover me",
+
+	states = {
+		MouseEnter = function(obj)
+			luacss.spring(obj, {
+				BackgroundColor3 = Color3.fromRGB(150, 200, 255)
+			})
+		end,
+
+		MouseLeave = function(obj)
+			luacss.spring(obj, {
+				BackgroundColor3 = Color3.fromRGB(100, 150, 255)
+			})
+		end
+	}
+})
+```
+
+### Scoped Cleanup
+```lua
+local scope = luacss.scope()
+
+local button = scope.compileObject({
+	class = "TextButton",
+	Text = "Scoped Button",
+})
+
+-- All objects in scope are automatically cleaned up
+scope:Cleanup()
+```
+
+## Notes
+
+- LuaCSS provides reactive UI updates through environment values
+- Components and styles promote code reuse
+- Spring animations provide smooth transitions
+- Scoped cleanup prevents memory leaks
+- Fully integrated with Construct's theming system
+
+## See Also
+
+- [GUI Components](/gui/basegui)
+- [Theme Service](/services/themeservice)
+- [Construct API](/modding/construct-api)
