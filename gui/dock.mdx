@@ -1,0 +1,255 @@
+---
+title: "Dock System"
+description: "Learn about Construct's dock system for organizing UI buttons and controls"
+---
+
+<Badge>GUI Component</Badge>
+
+## Description
+
+The Dock system provides a flexible way to organize and display UI buttons and controls in Construct. It consists of two main docks (upper and bottom) that can hold various tool buttons and provide smooth animations and interactions.
+
+## Basic Usage
+
+```lua
+local dock = require(ReplicatedStorage.Shared.Gui.Components.Dock)
+
+-- Create a bottom dock
+local bottomDock = dock(api.Gui)
+
+-- Create an upper dock
+local upperDock = dock(api.Gui)
+upperDock.Position = UDim2.new(0.5, 0, 0, 10) -- Position at top
+```
+
+## Dock Properties
+
+### Layout Properties
+- **Position**: Bottom center by default, can be customized
+- **Size**: Auto-sizes to fit content
+- **Padding**: 12 pixels horizontal padding
+- **Rounded**: 25 pixel corner radius
+- **Background**: Semi-transparent with blur effect
+
+### Animation Properties
+- **Spring animations**: Smooth show/hide transitions
+- **Blur effect**: Background blur when active
+- **Auto-sizing**: Adapts to content and screen size
+
+## Creating Dock Buttons
+
+```lua
+local dockButton = require(ReplicatedStorage.Shared.Gui.Components.DockButton)
+
+-- Create a dock button
+local button, hoverFunc, leaveFunc = dockButton(
+    parentDock,
+    "rbxassetid://123456789", -- Image ID
+    Color3.new(1, 1, 1),     -- Accent color
+    {
+        Name = "MyTool",
+        LayoutOrder = 1
+    }
+)
+```
+
+## Dock Button Types
+
+```lua
+export type DockButtonType = {
+    Image: string,           -- Button icon image ID
+    Color: Color3?,          -- Accent color (optional)
+    Callback: () -> (),      -- Function called when activated
+    Name: string,            -- Unique button name
+    EndedCallback: () -> (), -- Function called when deactivated
+    Keycode: Enum.KeyCode?,  -- Keyboard shortcut (optional)
+    DockParent: "UpperDock" | "BottomDock", -- Which dock to place in
+    Cooldown: number?,       -- Minimum time between activations
+}
+```
+
+## Integration with Signal System
+
+The dock system integrates with Construct's signal system for communication:
+
+```lua
+signal:Fire("CreateDockButton", {
+    Image = "rbxassetid://11419703493",
+    Color = Color3.new(1, 1, 1),
+    Callback = function()
+        print("Tool activated!")
+    end,
+    Name = "Save",
+    EndedCallback = function()
+        print("Tool deactivated!")
+    end,
+    Keycode = Enum.KeyCode.Nine,
+    DockParent = "UpperDock",
+})
+```
+
+## Dock States
+
+### Open/Close Animation
+```lua
+signal:Fire("CloseDock") -- Hide the dock
+signal:Fire("OpenDock")  -- Show the dock
+```
+
+### Upper Dock Auto-Hide
+The upper dock automatically slides up when not hovered and slides down when the mouse enters the upper area of the screen.
+
+## Tool Management
+
+The dock integrates with the ToolActive system for managing tool states:
+
+```lua
+local toolManager = toolactive.new()
+
+toolManager:RegisterTool("MyTool", function()
+    -- Tool activated
+    print("Tool is now active")
+end, function()
+    -- Tool deactivated
+    print("Tool is now inactive")
+end)
+
+-- Activate tool programmatically
+toolManager:SetActive("MyTool")
+```
+
+## Keyboard Shortcuts
+
+Dock buttons can be assigned keyboard shortcuts:
+
+```lua
+signal:Fire("CreateDockButton", {
+    Name = "Save",
+    Keycode = Enum.KeyCode.Nine, -- Number 9 key
+    DockParent = "UpperDock",
+    -- ... other properties
+})
+```
+
+## Visual Feedback
+
+### Hover Effects
+- **Background transparency**: Changes on hover
+- **Stroke thickness**: Increases on hover
+- **Icon scaling**: Subtle size changes
+
+### Active States
+- **Color changes**: Icon color changes when active
+- **Stroke effects**: Visual feedback for active tools
+- **Background opacity**: Different opacity for active state
+
+## Dock Positioning
+
+### Bottom Dock
+- Position: Bottom center of screen
+- Default offset: 10 pixels from bottom
+- Auto-sizes horizontally to fit buttons
+
+### Upper Dock
+- Position: Top center of screen
+- Hidden by default, slides down on hover
+- Contains settings and save buttons
+
+## Responsive Design
+
+The dock system adapts to different screen sizes:
+
+```lua
+fitToDevice = {
+    UseAspect = true,  -- Adapts to screen aspect ratio
+}
+```
+
+## Integration Examples
+
+### Save Menu Integration
+```lua
+-- From SaveMenu.lua
+signal:Fire("CreateDockButton", {
+    Image = "rbxassetid://11419703493",
+    Callback = function()
+        signal:Fire("CloseDock")
+        saveMenu:Open(OpenParams)
+    end,
+    Name = "Save",
+    EndedCallback = function()
+        signal:Fire("OpenDock")
+        saveMenu:Close()
+    end,
+    Keycode = Enum.KeyCode.Nine,
+    DockParent = "UpperDock",
+})
+```
+
+### Settings Menu Integration
+```lua
+-- From SettingsMenu.lua
+signal:Fire("CreateDockButton", {
+    Image = "rbxassetid://11293977610",
+    Callback = function()
+        signal:Fire("CloseDock")
+        settingsMenu:Open(OpenParams)
+    end,
+    Name = "Settings",
+    EndedCallback = function()
+        signal:Fire("OpenDock")
+        settingsMenu:Close()
+    end,
+    Keycode = Enum.KeyCode.Zero,
+    DockParent = "UpperDock",
+})
+```
+
+## Best Practices
+
+### Button Organization
+- **Upper Dock**: Settings, save, and utility functions
+- **Bottom Dock**: Primary tools and building functions
+- **Logical grouping**: Related functions together
+- **Consistent naming**: Clear, descriptive button names
+
+### Visual Design
+- **Consistent colors**: Use theme colors for accents
+- **Appropriate icons**: Clear, recognizable button icons
+- **Size consistency**: Keep button sizes uniform
+- **Hover feedback**: Provide clear visual feedback
+
+### Performance
+- **Lazy loading**: Load button icons as needed
+- **Efficient animations**: Use spring animations for smooth transitions
+- **Memory management**: Clean up unused button references
+
+### Accessibility
+- **Keyboard shortcuts**: Provide keyboard alternatives
+- **Clear labels**: Use tooltips for button functions
+- **Color contrast**: Ensure good visibility
+- **Focus management**: Proper focus handling for keyboard users
+
+## Troubleshooting
+
+### Buttons Not Appearing
+- Check dock parent assignment
+- Verify signal connection
+- Ensure proper initialization order
+
+### Animation Issues
+- Check spring settings
+- Verify CSS configuration
+- Confirm animation parameters
+
+### Tool State Problems
+- Check tool registration
+- Verify callback functions
+- Ensure proper cleanup
+
+## See Also
+
+- [DockButton Component](/gui/dockbutton)
+- [BaseGui Component](/gui/basegui)
+- [Signal System](/modding/client-signal-api)
+- [Tool Management](/modding/tool-management)

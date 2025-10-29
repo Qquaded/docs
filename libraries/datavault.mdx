@@ -1,0 +1,609 @@
+---
+title: "Datavault"
+description: "DataStore wrapper library for safe and reliable data persistence in Construct"
+---
+
+<Badge>Shared</Badge>
+
+## Description
+
+Datavault is a comprehensive wrapper around Roblox's DataStoreService that provides safe, reliable data persistence with automatic error handling, retry logic, and version management. It's designed to handle the complexities of DataStore operations while providing a simple, consistent API.
+
+## Basic Usage
+
+```lua
+local Datavault = require(ReplicatedStorage.Shared.Libraries.Datavault)
+
+-- Create a data vault
+local playerData = Datavault.vault("PlayerData", "Main")
+
+-- Save data
+local success, error = playerData:Save("user123", {
+    level = 10,
+    coins = 500,
+    inventory = {"sword", "shield"}
+})
+
+-- Load data
+local data = playerData:Load("user123")
+if data then
+    print("Player level:", data.level)
+end
+```
+
+## Core Functions
+
+### vault(name: string, scope: string?)
+Creates a new data vault instance.
+
+**Parameters:**
+- `name` (string): DataStore name
+- `scope` (string, optional): DataStore scope
+
+**Returns:** Vault object with methods
+
+**Example:**
+```lua
+-- Global player data
+local playerVault = Datavault.vault("PlayerData")
+
+-- Game-specific data
+local gameVault = Datavault.vault("GameStats", "Season1")
+
+-- Server-specific data
+local serverVault = Datavault.vault("ServerData", game.JobId)
+```
+
+### ListGameDataVaults(callback: function)
+Lists all DataStore names in the game.
+
+**Parameters:**
+- `callback` (function): Function called for each DataStore name
+
+**Example:**
+```lua
+Datavault:ListGameDataVaults(function(storeName)
+    print("Found DataStore:", storeName)
+end)
+```
+
+## Vault Methods
+
+### Save(key: string, value: any)
+Saves data to the DataStore with automatic retry logic.
+
+**Parameters:**
+- `key` (string): Data key
+- `value` (any): Data to save (must be DataStore-compatible)
+
+**Returns:** success (boolean), error (string or nil)
+
+**Example:**
+```lua
+local success, error = vault:Save("player123", {
+    name = "Alice",
+    score = 1000,
+    items = {"sword", "shield"}
+})
+
+if success then
+    print("Data saved successfully")
+else
+    warn("Failed to save data:", error)
+end
+```
+
+### Load(key: string)
+Loads data from the DataStore.
+
+**Parameters:**
+- `key` (string): Data key
+
+**Returns:** Loaded data or nil if not found/error
+
+**Example:**
+```lua
+local data = vault:Load("player123")
+if data then
+    print("Player name:", data.name)
+    print("Player score:", data.score)
+else
+    print("No data found for player")
+end
+```
+
+### Remove(key: string)
+Removes data from the DataStore.
+
+**Parameters:**
+- `key` (string): Data key to remove
+
+**Returns:** success (boolean), error (string or nil)
+
+**Example:**
+```lua
+local success, error = vault:Remove("oldPlayerData")
+if success then
+    print("Data removed successfully")
+else
+    warn("Failed to remove data:", error)
+end
+```
+
+### GetVersions(key: string, callback: function)
+Retrieves all versions of a data key.
+
+**Parameters:**
+- `key` (string): Data key
+- `callback` (function): Function called for each version
+
+**Example:**
+```lua
+vault:GetVersions("player123", function(versionData)
+    print("Version date:", versionData.CreatedTime)
+    print("Version data:", versionData.Value)
+end)
+```
+
+### GetKeys(callback: function)
+Lists all keys in the DataStore.
+
+**Parameters:**
+- `callback` (function): Function called for each key
+
+**Example:**
+```lua
+vault:GetKeys(function(keyName)
+    print("Found key:", keyName)
+end)
+```
+
+## DataStore Compatibility
+
+Datavault only accepts DataStore-compatible data types:
+
+### Supported Types
+- **Primitives**: `string`, `number`, `boolean`
+- **Tables**: Arrays and dictionaries (no mixed keys)
+- **Vectors**: `Vector3`, `Vector2`, `Vector3int16`, etc.
+- **CFrames**: `CFrame`
+- **Colors**: `Color3`, `BrickColor`
+- **Enums**: `EnumItem` instances
+
+### Unsupported Types
+- **Functions**
+- **Threads**
+- **Userdata** (except supported Roblox types)
+- **Circular references**
+- **Mixed key types** in tables
+
+### Data Validation
+
+```lua
+function validateData(data)
+    -- Check for unsupported types
+    local function checkValue(value, path)
+        local valueType = typeof(value)
+
+        if valueType == "function" or valueType == "thread" then
+            error("Unsupported type at " .. path .. ": " .. valueType)
+        elseif valueType == "table" then
+            for key, val in pairs(value) do
+                if typeof(key) ~= "string" and typeof(key) ~= "number" then
+                    error("Unsupported key type at " .. path .. ": " .. typeof(key))
+                end
+                checkValue(val, path .. "." .. tostring(key))
+            end
+        end
+    end
+
+    checkValue(data, "root")
+    return true
+end
+
+-- Usage
+if validateData(myData) then
+    vault:Save("player123", myData)
+end
+```
+
+## Error Handling and Retry Logic
+
+Datavault includes comprehensive error handling:
+
+### Automatic Retries
+```lua
+-- Internal retry logic handles:
+-- - Rate limiting (429 errors)
+-- - Temporary outages
+-- - Network issues
+-- - DataStore throttling
+
+local success, error = vault:Save("key", data)
+-- May retry automatically up to configured limit
+```
+
+### Error Types
+- **RateLimited**: Too many requests
+- **QuotaExceeded**: DataStore quota reached
+- **NotFound**: Key doesn't exist
+- **PermissionDenied**: No access to DataStore
+- **DataStoreException**: Generic DataStore error
+
+### Custom Error Handling
+```lua
+function saveWithCustomHandling(vault, key, data)
+    local success, error = vault:Save(key, data)
+
+    if not success then
+        if error == "RateLimited" then
+            -- Wait and retry
+            task.wait(1)
+            return vault:Save(key, data)
+        elseif error == "QuotaExceeded" then
+            -- Compress or reduce data
+            local compressed = compressData(data)
+            return vault:Save(key .. "_compressed", compressed)
+        else
+            -- Log and notify user
+            Logger.Error("DataVault", "Save failed: " .. error)
+            notifyUser("Failed to save progress")
+        end
+    end
+
+    return success, error
+end
+```
+
+## Version Management
+
+### Accessing Historical Data
+```lua
+vault:GetVersions("player123", function(versionInfo)
+    print("Version created:", versionInfo.CreatedTime)
+    print("Version data:", versionInfo.Value)
+
+    -- Restore old version if needed
+    if shouldRestore(versionInfo) then
+        vault:Save("player123", versionInfo.Value)
+    end
+end)
+```
+
+### Backup System
+```lua
+function createBackup(vault, key)
+    local data = vault:Load(key)
+    if data then
+        local backupKey = key .. "_backup_" .. os.time()
+        vault:Save(backupKey, data)
+        print("Backup created:", backupKey)
+    end
+end
+
+function restoreBackup(vault, key)
+    vault:GetKeys(function(foundKey)
+        if foundKey:match(key .. "_backup_") then
+            local backupData = vault:Load(foundKey)
+            if backupData then
+                vault:Save(key, backupData)
+                print("Restored from backup:", foundKey)
+            end
+        end
+    end)
+end
+```
+
+## Performance Optimization
+
+### Batching Operations
+```lua
+-- Instead of multiple saves
+vault:Save("player1", data1)
+vault:Save("player2", data2)
+vault:Save("player3", data3)
+
+-- Batch related saves
+local batchData = {
+    player1 = data1,
+    player2 = data2,
+    player3 = data3
+}
+vault:Save("batch_" .. os.time(), batchData)
+```
+
+### Caching Layer
+```lua
+local Cache = {}
+
+function cachedLoad(vault, key)
+    if Cache[key] then
+        return Cache[key]
+    end
+
+    local data = vault:Load(key)
+    if data then
+        Cache[key] = data
+        -- Cache for 5 minutes
+        task.delay(300, function()
+            Cache[key] = nil
+        end)
+    end
+
+    return data
+end
+```
+
+### Compression
+```lua
+-- Simple compression for large datasets
+function compressTable(data)
+    -- Remove default values
+    local compressed = {}
+    for key, value in pairs(data) do
+        if value ~= getDefault(key) then
+            compressed[key] = value
+        end
+    end
+    return compressed
+end
+
+function decompressTable(compressed)
+    local data = getDefaults()
+    for key, value in pairs(compressed) do
+        data[key] = value
+    end
+    return data
+end
+```
+
+## Integration with Construct Systems
+
+### Player Data Management
+```lua
+local PlayerDataVault = Datavault.vault("PlayerData", "Main")
+
+local PlayerDataManager = {
+    loadPlayerData = function(player)
+        local data = PlayerDataVault:Load(tostring(player.UserId))
+        return data or getDefaultPlayerData()
+    end,
+
+    savePlayerData = function(player, data)
+        local success, error = PlayerDataVault:Save(tostring(player.UserId), data)
+        if not success then
+            Logger.Error("PlayerData", "Failed to save data for " .. player.Name .. ": " .. error)
+        end
+        return success
+    end,
+
+    removePlayerData = function(player)
+        PlayerDataVault:Remove(tostring(player.UserId))
+    end
+}
+
+-- Usage in game
+Players.PlayerAdded:Connect(function(player)
+    local data = PlayerDataManager.loadPlayerData(player)
+    setupPlayer(player, data)
+end)
+
+Players.PlayerRemoving:Connect(function(player)
+    local data = getCurrentPlayerData(player)
+    PlayerDataManager.savePlayerData(player, data)
+end)
+```
+
+### Build Saving System
+```lua
+local BuildVault = Datavault.vault("PlayerBuilds", "Main")
+
+local BuildManager = {
+    saveBuild = function(player, buildName, buildData)
+        local key = player.UserId .. "_" .. buildName
+        local success, error = BuildVault:Save(key, {
+            name = buildName,
+            data = buildData,
+            savedAt = os.time(),
+            version = getBuildVersion()
+        })
+
+        if success then
+            Logger.Log("BuildManager", "Saved build " .. buildName .. " for " .. player.Name)
+        else
+            Logger.Error("BuildManager", "Failed to save build: " .. error)
+        end
+
+        return success
+    end,
+
+    loadBuild = function(player, buildName)
+        local key = player.UserId .. "_" .. buildName
+        local buildInfo = BuildVault:Load(key)
+
+        if buildInfo then
+            Logger.Log("BuildManager", "Loaded build " .. buildName .. " for " .. player.Name)
+            return buildInfo.data
+        else
+            Logger.Warn("BuildManager", "No build found: " .. buildName)
+            return nil
+        end
+    end,
+
+    listPlayerBuilds = function(player, callback)
+        local prefix = player.UserId .. "_"
+
+        BuildVault:GetKeys(function(key)
+            if key:sub(1, #prefix) == prefix then
+                local buildName = key:sub(#prefix + 1)
+                callback(buildName)
+            end
+        end)
+    end
+}
+```
+
+### Server Configuration
+```lua
+local ServerConfigVault = Datavault.vault("ServerConfig", game.JobId)
+
+local ServerConfig = {
+    loadConfig = function()
+        return ServerConfigVault:Load("config") or getDefaultServerConfig()
+    end,
+
+    saveConfig = function(config)
+        ServerConfigVault:Save("config", config)
+    end,
+
+    -- Auto-save every 5 minutes
+    startAutoSave = function()
+        task.spawn(function()
+            while true do
+                task.wait(300) -- 5 minutes
+                local config = getCurrentServerConfig()
+                ServerConfig.saveConfig(config)
+                Logger.Log("ServerConfig", "Auto-saved server configuration")
+            end
+        end)
+    end
+}
+```
+
+## Best Practices
+
+### Key Naming Conventions
+```lua
+-- Good: Structured keys
+vault:Save("player_123456789_inventory", inventoryData)
+vault:Save("guild_abc123_members", memberData)
+vault:Save("server_main_config", configData)
+
+-- Avoid: Generic keys
+vault:Save("data", myData)
+vault:Save("123", playerData)
+```
+
+### Data Structure Design
+```lua
+-- Good: Normalized data
+local playerData = {
+    profile = {
+        name = "Alice",
+        level = 10,
+        joinDate = os.time()
+    },
+    stats = {
+        gamesPlayed = 50,
+        wins = 30,
+        losses = 20
+    },
+    inventory = {
+        weapons = {"sword", "bow"},
+        armor = {"helmet", "chestplate"}
+    }
+}
+
+-- Avoid: Deep nesting
+local badData = {
+    profile = {stats = {inventory = {weapons = {...}}}}
+}
+```
+
+### Error Recovery
+```lua
+function safeSave(vault, key, data, maxRetries)
+    maxRetries = maxRetries or 3
+
+    for attempt = 1, maxRetries do
+        local success, error = vault:Save(key, data)
+
+        if success then
+            return true
+        end
+
+        if attempt < maxRetries then
+            local delay = attempt * 2 -- Exponential backoff
+            Logger.Warn("DataVault", string.format(
+                "Save attempt %d failed, retrying in %d seconds: %s",
+                attempt, delay, error
+            ))
+            task.wait(delay)
+        end
+    end
+
+    Logger.Error("DataVault", "All save attempts failed for key: " .. key)
+    return false
+end
+```
+
+### Migration Handling
+```lua
+function migratePlayerData(vault, playerId)
+    local oldData = vault:Load("old_" .. playerId)
+    if oldData then
+        -- Migrate to new format
+        local newData = {
+            profile = {
+                name = oldData.name,
+                level = oldData.level or 1
+            },
+            stats = {
+                gamesPlayed = oldData.games or 0,
+                wins = oldData.wins or 0
+            }
+        }
+
+        vault:Save(playerId, newData)
+        vault:Remove("old_" .. playerId)
+
+        Logger.Log("DataMigration", "Migrated data for player " .. playerId)
+    end
+end
+```
+
+## Monitoring and Analytics
+
+### Usage Tracking
+```lua
+local AnalyticsVault = Datavault.vault("Analytics", "Usage")
+
+function trackDataOperation(operation, key, success, error)
+    local today = os.date("%Y-%m-%d")
+    local analyticsKey = today .. "_operations"
+
+    local data = AnalyticsVault:Load(analyticsKey) or {
+        total = 0,
+        successful = 0,
+        failed = 0,
+        byOperation = {}
+    }
+
+    data.total = data.total + 1
+
+    if success then
+        data.successful = data.successful + 1
+    else
+        data.failed = data.failed + 1
+    end
+
+    data.byOperation[operation] = (data.byOperation[operation] or 0) + 1
+
+    AnalyticsVault:Save(analyticsKey, data)
+end
+
+-- Wrap vault operations
+local originalSave = vault.Save
+vault.Save = function(self, key, value)
+    local success, error = originalSave(self, key, value)
+    trackDataOperation("save", key, success, error)
+    return success, error
+end
+```
+
+## See Also
+
+- [Logger Library](/libraries/logger)
+- [Player Data Management](/modding/player-data)
+- [Server Configuration](/modding/server-config)
+- [DataStore Best Practices](https://create.roblox.com/docs/reference/engine/classes/DataStoreService)

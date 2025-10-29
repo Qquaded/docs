@@ -37,7 +37,8 @@
             "pages": [
               "modding/vision-framework",
               "modding/construct-api",
-              "modding/atom-system"
+              "modding/atom-system",
+              "modding/client-signal-api"
             ]
           },
           {
@@ -57,6 +58,7 @@
           {
             "group": "Classes",
             "pages": [
+              "classes/signal",
               "classes/mod",
               "classes/settingskeycode",
               "classes/numberrange",
@@ -68,9 +70,12 @@
             "group": "Libraries",
             "pages": [
               "libraries/logger",
-              "libraries/luacss",
+              "libraries/snap",
+              "libraries/quadutils",
               "libraries/datavault",
-              "libraries/atom"
+              "libraries/ponder",
+              "libraries/luacss",
+              "libraries/settings-api"
             ]
           },
           {
@@ -85,11 +90,10 @@
             "group": "GUI Components",
             "pages": [
               "gui/basegui",
+              "gui/dock",
+              "gui/dockbutton",
               "gui/textbutton",
-              "gui/imagebutton",
-              "gui/textbox",
-              "gui/scroller",
-              "gui/window"
+              "gui/imagebutton"
             ]
           }
         ]

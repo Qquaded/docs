@@ -1,0 +1,337 @@
+---
+title: "DockButton Component"
+description: "Learn about the DockButton component for creating interactive dock buttons"
+---
+
+<Badge>GUI Component</Badge>
+
+## Description
+
+DockButton is a specialized button component designed for use in Construct's dock system. It provides animated, themed buttons with hover effects, color accents, and smooth transitions that integrate seamlessly with the dock interface.
+
+## Basic Usage
+
+```lua
+local dockButton = require(ReplicatedStorage.Shared.Gui.Components.DockButton)
+
+-- Create a dock button
+local button, hoverFunc, leaveFunc = dockButton(
+    parentDock,                    -- Parent dock
+    "rbxassetid://123456789",     -- Icon image
+    Color3.new(1, 1, 1),          -- Accent color
+    {                              -- Additional properties
+        Name = "MyButton",
+        LayoutOrder = 1
+    }
+)
+
+-- Set up interactions
+css.edit(button, {
+    clicked = function()
+        print("Button clicked!")
+    end
+})
+```
+
+## Constructor Parameters
+
+### parent
+The parent GUI element (typically a Dock component).
+
+### image
+String containing the image asset ID for the button icon.
+
+### color
+Color3 value for the button's accent color (used for stroke and hover effects).
+
+### properties (optional)
+Additional CSS properties to apply to the button.
+
+### AnimationParams (optional)
+Animation parameters for size, position, and transparency.
+
+## Return Values
+
+The dockButton function returns three values:
+
+1. **button**: The created ImageButton instance
+2. **hoverFunc**: Function to trigger hover visual effects
+3. **leaveFunc**: Function to trigger leave visual effects
+
+## Visual Properties
+
+### Default Appearance
+- **Size**: 56x56 pixels (compact design)
+- **Background**: Semi-transparent with theme color
+- **Rounded corners**: 15 pixel radius
+- **Stroke**: Colored outline with accent color
+- **Icon**: Centered image with white tint
+
+### Hover Effects
+- **Background transparency**: Animates to fully transparent
+- **Stroke thickness**: Increases from 1.5 to 2 pixels
+- **Smooth animations**: Spring-based transitions
+
+### Active State
+- **Icon color**: Changes to accent color
+- **Size scaling**: Slightly smaller for pressed effect
+- **Background**: More transparent
+
+## Integration with Tool System
+
+DockButtons integrate with Construct's tool management system:
+
+```lua
+local toolManager = toolactive.new()
+
+-- Register the button with tool manager
+toolManager:RegisterTool("MyTool", function()
+    hoverFunc()  -- Show hover state
+    -- Tool activation logic
+    activateMyTool()
+end, function()
+    leaveFunc()  -- Show normal state
+    -- Tool deactivation logic
+    deactivateMyTool()
+end)
+
+-- Connect button click to tool activation
+css.edit(button, {
+    clicked = function()
+        toolManager:SetActive("MyTool")
+    end
+})
+```
+
+## Keyboard Shortcuts
+
+Buttons can be assigned keyboard shortcuts through the dock system:
+
+```lua
+-- In dock client module
+signal:Fire("CreateDockButton", {
+    Image = "rbxassetid://123456789",
+    Color = Color3.new(1, 0, 0),
+    Callback = function()
+        toolManager:SetActive("MyTool")
+    end,
+    Name = "MyTool",
+    Keycode = Enum.KeyCode.Q,  -- Q key shortcut
+    DockParent = "BottomDock",
+    Cooldown = 0.5  -- 500ms cooldown
+})
+```
+
+## Animation System
+
+### Spring Animations
+DockButtons use Construct's spring animation system for smooth transitions:
+
+```lua
+-- Hover transparency animation
+hovertransparency = {
+    Damping = SettingsAPI.Animations.Damping,
+    Frequency = SettingsAPI.Animations.Frequency,
+    Value = 1,  -- Fully transparent
+    Animated = true,
+}
+
+-- Leave transparency animation
+leavetransparency = {
+    Damping = SettingsAPI.Animations.Damping,
+    Frequency = SettingsAPI.Animations.Frequency,
+    Value = 0.4,  -- Semi-transparent
+    Animated = true,
+}
+```
+
+### Tween Effects
+Additional tween effects are applied using BoatTween:
+
+```lua
+local BoatTween = require(ReplicatedStorage.Packages.boattween)
+
+local function createTween(instance, time, properties)
+    BoatTween:Create(instance, {
+        Time = time,
+        EasingStyle = "EntranceExpressive",
+        EasingDirection = "In",
+        StepType = "Heartbeat",
+        Goal = properties,
+    }):Play()
+end
+
+-- Used for stroke thickness changes
+createTween(button.ColoredStroke, 0.2, { Thickness = 2 })
+```
+
+## CSS Integration
+
+DockButtons fully integrate with Construct's CSS system:
+
+```lua
+css.edit(button, {
+    -- Standard CSS properties
+    size = {0, 64, 0, 64},  -- Override default size
+    groundcolor = Color3.new(0.5, 0.5, 0.5),  -- Custom background
+
+    -- Event handlers
+    hovered = function(obj)
+        print("Mouse entered button")
+    end,
+
+    leave = function(obj)
+        print("Mouse left button")
+    end,
+
+    clicked = function(obj)
+        print("Button clicked")
+    end,
+
+    -- Custom animations
+    run = function(obj)
+        -- Custom initialization
+        obj.CustomProperty = "value"
+    end
+})
+```
+
+## State Management
+
+### Visual States
+- **Normal**: Default appearance
+- **Hover**: Mouse over effects
+- **Active**: Tool is currently selected
+- **Disabled**: Button is inactive
+
+### Tool States
+Integration with ToolActive system provides:
+- **Single active tool**: Only one tool active at a time
+- **State persistence**: Tool states maintained across operations
+- **Automatic cleanup**: Proper deactivation handling
+
+## Theming
+
+DockButtons respect Construct's theming system:
+
+```lua
+-- Uses theme variables
+groundcolor = `$BackgroundColor`,
+groundtransparency = `$BackgroundTransparency`,
+
+-- Settings integration
+Damping = SettingsAPI.Animations.Damping,
+Frequency = SettingsAPI.Animations.Frequency,
+```
+
+## Performance Considerations
+
+### Efficient Animations
+- **Spring physics**: Hardware-accelerated animations
+- **Minimal updates**: Only animate when necessary
+- **Shared settings**: Reuse animation configurations
+
+### Memory Management
+- **Event cleanup**: Proper disconnection of events
+- **Reference management**: Avoid circular references
+- **Lazy loading**: Load assets as needed
+
+## Accessibility
+
+### Keyboard Navigation
+- **Tab order**: Proper focus management
+- **Enter/Space**: Keyboard activation
+- **Visual feedback**: Clear focus indicators
+
+### Screen Reader Support
+- **ARIA labels**: Descriptive button labels
+- **State announcements**: Active/inactive state feedback
+- **Shortcut hints**: Keyboard shortcut display
+
+## Common Patterns
+
+### Toggle Button
+```lua
+local isActive = false
+
+local button, hoverFunc, leaveFunc = dockButton(dock, icon, color, {
+    Name = "ToggleTool"
+})
+
+css.edit(button, {
+    clicked = function()
+        isActive = not isActive
+        if isActive then
+            activateTool()
+            button.BackgroundColor3 = Color3.new(0, 1, 0) -- Green when active
+        else
+            deactivateTool()
+            button.BackgroundColor3 = Color3.new(1, 1, 1) -- White when inactive
+        end
+    end
+})
+```
+
+### Modal Dialog Button
+```lua
+local button, hoverFunc, leaveFunc = dockButton(dock, icon, color, {
+    Name = "OpenDialog"
+})
+
+css.edit(button, {
+    clicked = function()
+        -- Open modal dialog
+        local dialog = createModalDialog()
+        dialog.Parent = api.Gui
+
+        -- Close dock while dialog is open
+        signal:Fire("CloseDock")
+
+        -- Reopen dock when dialog closes
+        dialog.Destroying:Connect(function()
+            signal:Fire("OpenDock")
+        end)
+    end
+})
+```
+
+### Progress Button
+```lua
+local button, hoverFunc, leaveFunc = dockButton(dock, icon, color, {
+    Name = "ProgressTool"
+})
+
+local progressBar = createProgressBar(button)
+
+css.edit(button, {
+    clicked = function()
+        startLongOperation(function(progress)
+            progressBar.Size = UDim2.new(progress, 0, 1, 0)
+        end)
+    end
+})
+```
+
+## Troubleshooting
+
+### Button Not Responding
+- Check CSS event handlers are properly attached
+- Verify tool registration with ToolActive system
+- Ensure proper parent assignment
+
+### Animation Issues
+- Confirm spring settings are properly configured
+- Check for conflicting CSS properties
+- Verify animation parameters are valid
+
+### Visual Problems
+- Check theme variable references
+- Verify image asset IDs are correct
+- Ensure proper ZIndex layering
+
+## See Also
+
+- [Dock System](/gui/dock)
+- [BaseGui Component](/gui/basegui)
+- [CSS System](/libraries/luacss)
+- [Tool Management](/modding/tool-management)

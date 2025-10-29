@@ -1,0 +1,557 @@
+---
+title: "QuadUtils"
+description: "Utility library providing helper functions for math, vectors, models, and string operations"
+---
+
+<Badge>Shared</Badge>
+
+## Description
+
+QuadUtils is a comprehensive utility library that provides helper functions for common operations in Construct. It includes mathematical utilities, vector operations, model manipulation, boundary checking, and string processing functions used throughout the engine.
+
+## Basic Usage
+
+```lua
+local quadUtils = require(ReplicatedStorage.Shared.Libraries.quadutils)
+
+-- Vector clamping
+local clamped = quadUtils.clampVector(position, minBounds, maxBounds)
+
+-- Model pivot manipulation
+quadUtils.ResetPivot(model, "Center")
+
+-- Boundary checking
+local isOutside = quadUtils.IsPositionOutsideBounds(position, boundaryPart)
+```
+
+## Vector and Math Utilities
+
+### clampVector(vec: Vector3, minVec: Vector3, maxVec: Vector3)
+Clamps each component of a vector between min and max values.
+
+**Parameters:**
+- `vec` (Vector3): Vector to clamp
+- `minVec` (Vector3): Minimum bounds
+- `maxVec` (Vector3): Maximum bounds
+
+**Returns:** Clamped Vector3
+
+**Example:**
+```lua
+local position = Vector3.new(10, 5, -2)
+local clamped = quadUtils.clampVector(
+    position,
+    Vector3.new(0, 0, 0),    -- min
+    Vector3.new(5, 10, 5)    -- max
+)
+-- Returns Vector3.new(5, 5, 0)
+```
+
+### lerpVector(a: Vector3, b: Vector3, t: number)
+Linear interpolation between two vectors.
+
+**Parameters:**
+- `a` (Vector3): Start vector
+- `b` (Vector3): End vector
+- `t` (number): Interpolation factor (0-1)
+
+**Returns:** Interpolated Vector3
+
+**Example:**
+```lua
+local start = Vector3.new(0, 0, 0)
+local endPos = Vector3.new(10, 0, 0)
+local halfway = quadUtils.lerpVector(start, endPos, 0.5)
+-- Returns Vector3.new(5, 0, 0)
+```
+
+### snap(n: number, grid: number)
+Snaps a number to the nearest grid point.
+
+**Parameters:**
+- `n` (number): Number to snap
+- `grid` (number): Grid size
+
+**Returns:** Snapped number
+
+**Example:**
+```lua
+local snapped = quadUtils.snap(5.7, 2.5) -- Returns 6.0
+```
+
+## Model and Part Manipulation
+
+### ResetPivot(model: Model, pivotPosition: "Center" | "Bottom" | "Top" | "Custom", customCFrame: CFrame?)
+Resets the pivot point of a model.
+
+**Parameters:**
+- `model` (Model): Model to modify
+- `pivotPosition` (string): Pivot position type
+- `customCFrame` (CFrame, optional): Custom CFrame for "Custom" mode
+
+**Example:**
+```lua
+-- Center the pivot
+quadUtils.ResetPivot(myModel, "Center")
+
+-- Set to bottom
+quadUtils.ResetPivot(myModel, "Bottom")
+
+-- Custom position
+quadUtils.ResetPivot(myModel, "Custom", CFrame.new(0, 5, 0))
+```
+
+### ScalePartFrom(part: BasePart, scaleVector: Vector3, pivot: string)
+Scales a part from a specific pivot point.
+
+**Parameters:**
+- `part` (BasePart): Part to scale
+- `scaleVector` (Vector3): Scale factors
+- `pivot` (string): Pivot point ("Top", "Bottom", "Left", "Right", "Front", "Back", "Center")
+
+**Example:**
+```lua
+-- Scale up from center
+quadUtils.ScalePartFrom(myPart, Vector3.new(2, 2, 2), "Center")
+
+-- Scale from bottom
+quadUtils.ScalePartFrom(myPart, Vector3.new(1, 2, 1), "Bottom")
+```
+
+### RotateCFrame(cframe: CFrame, axis: Vector3, angle: number, pivot: Vector3?)
+Rotates a CFrame around an axis at a pivot point.
+
+**Parameters:**
+- `cframe` (CFrame): CFrame to rotate
+- `axis` (Vector3): Rotation axis
+- `angle` (number): Rotation angle in radians
+- `pivot` (Vector3, optional): Pivot point
+
+**Returns:** Rotated CFrame
+
+**Example:**
+```lua
+local rotated = quadUtils.RotateCFrame(
+    part.CFrame,
+    Vector3.new(0, 1, 0), -- Y axis
+    math.rad(90),         -- 90 degrees
+    part.Position         -- Pivot at part center
+)
+part.CFrame = rotated
+```
+
+### mirror(cframe: CFrame, point: Vector3?, normal: Vector3?)
+Mirrors a CFrame over a plane.
+
+**Parameters:**
+- `cframe` (CFrame): CFrame to mirror
+- `point` (Vector3, optional): Point on mirror plane
+- `normal` (Vector3, optional): Normal of mirror plane
+
+**Returns:** Mirrored CFrame
+
+**Example:**
+```lua
+-- Mirror over YZ plane
+local mirrored = quadUtils.mirror(
+    part.CFrame,
+    Vector3.new(0, 0, 0),    -- Origin
+    Vector3.new(1, 0, 0)     -- X-axis normal
+)
+part.CFrame = mirrored
+```
+
+## Boundary and Collision Detection
+
+### IsPositionOutsideBounds(pos: Vector3, boundary: BasePart)
+Checks if a position is outside a boundary part.
+
+**Parameters:**
+- `pos` (Vector3): Position to check
+- `boundary` (BasePart): Boundary part
+
+**Returns:** boolean indicating if outside
+
+**Example:**
+```lua
+if quadUtils.IsPositionOutsideBounds(playerPos, plotBoundary) then
+    -- Player is outside plot
+    teleportBack(player)
+end
+```
+
+### IsSizeOutsideBounds(size: Vector3, boundary: BasePart)
+Checks if a size would exceed boundary limits.
+
+**Parameters:**
+- `size` (Vector3): Size to check
+- `boundary` (BasePart): Boundary part
+
+**Returns:** boolean indicating if too big
+
+**Example:**
+```lua
+if quadUtils.IsSizeOutsideBounds(buildSize, plotBoundary) then
+    -- Build is too big for plot
+    rejectBuild()
+end
+```
+
+### IsPositionOutsideXZBounds(position: Vector3, boundaryPart: BasePart)
+Checks if position is outside XZ bounds (top-down view).
+
+**Parameters:**
+- `position` (Vector3): Position to check
+- `boundaryPart` (BasePart): Boundary part
+
+**Returns:** boolean
+
+### IsSizeOutsideXZBounds(size: Vector3, boundaryPart: BasePart)
+Checks if size exceeds XZ bounds.
+
+**Parameters:**
+- `size` (Vector3): Size to check
+- `boundaryPart` (BasePart): Boundary part
+
+**Returns:** boolean
+
+## Screen and Viewport Utilities
+
+### WorldToScreen(cam: Camera, pos: Vector3)
+Converts world position to screen coordinates.
+
+**Parameters:**
+- `cam` (Camera): Camera to use
+- `pos` (Vector3): World position
+
+**Returns:** UDim2 screen position or nil if not visible
+
+**Example:**
+```lua
+local screenPos = quadUtils.WorldToScreen(workspace.CurrentCamera, target.Position)
+if screenPos then
+    indicator.Position = screenPos
+end
+```
+
+### WorldToScreenViewport(cam: Camera, viewport: ViewportFrame, pos: Vector3)
+Converts world position to viewport coordinates.
+
+**Parameters:**
+- `cam` (Camera): Camera
+- `viewport` (ViewportFrame): Target viewport
+- `pos` (Vector3): World position
+
+**Returns:** UDim2 viewport position or nil
+
+**Example:**
+```lua
+local viewportPos = quadUtils.WorldToScreenViewport(
+    camera,
+    myViewport,
+    object.Position
+)
+```
+
+## String Manipulation
+
+### customFind(str: string, pattern: string, start: number?)
+Custom string find function.
+
+**Parameters:**
+- `str` (string): String to search
+- `pattern` (string): Pattern to find
+- `start` (number, optional): Start position
+
+**Returns:** start and end positions or nil
+
+**Example:**
+```lua
+local start, endPos = quadUtils.customFind("Hello World", "World")
+-- Returns 7, 11
+```
+
+### customGsub(str: string, pattern: string, replacement: string, maxReplacements: number?)
+Custom string substitution function.
+
+**Parameters:**
+- `str` (string): String to modify
+- `pattern` (string): Pattern to replace
+- `replacement` (string): Replacement string
+- `maxReplacements` (number, optional): Maximum replacements
+
+**Returns:** Modified string and replacement count
+
+**Example:**
+```lua
+local result, count = quadUtils.customGsub("aaa", "a", "b", 2)
+-- Returns "bba", 2
+```
+
+### customFullMatch(str: string, pattern: string, start: number?)
+Full pattern matching with captures.
+
+**Parameters:**
+- `str` (string): String to match
+- `pattern` (string): Pattern
+- `start` (number, optional): Start position
+
+**Returns:** Captured groups or matched string
+
+**Example:**
+```lua
+local name, value = quadUtils.customFullMatch("key=value", "(%w+)=(%w+)")
+-- Returns "key", "value"
+```
+
+## Collection Utilities
+
+### GetRandomEntry(tble: {})
+Returns a random entry from a table.
+
+**Parameters:**
+- `tble` (table): Table to pick from
+
+**Returns:** Random table entry
+
+**Example:**
+```lua
+local colors = {"red", "blue", "green"}
+local randomColor = quadUtils.GetRandomEntry(colors)
+```
+
+### loop(tble: {}, callback: function)
+Iterates over table with callback.
+
+**Parameters:**
+- `tble` (table): Table to iterate
+- `callback` (function): Function to call for each entry
+
+**Example:**
+```lua
+quadUtils.loop(playerList, function(index, player)
+    print(index, player.Name)
+end)
+```
+
+### LazyloadModules(folder: Folder, callback: function)
+Loads modules from folder lazily.
+
+**Parameters:**
+- `folder` (Folder): Folder containing modules
+- `callback` (function): Callback with index and module
+
+**Example:**
+```lua
+quadUtils.LazyloadModules(script.Modules, function(index, module)
+    print("Loaded module:", module.Name)
+end)
+```
+
+### findHumanoid(character: Model)
+Finds humanoid in a character model.
+
+**Parameters:**
+- `character` (Model): Character model
+
+**Returns:** Humanoid or nil
+
+**Example:**
+```lua
+local humanoid = quadUtils.findHumanoid(character)
+if humanoid then
+    humanoid:TakeDamage(10)
+end
+```
+
+## Reflection and Math
+
+### reflect(vector: Vector3, unitNormal: Vector3)
+Reflects a vector over a normal.
+
+**Parameters:**
+- `vector` (Vector3): Vector to reflect
+- `unitNormal` (Vector3): Normal vector (must be unit length)
+
+**Returns:** Reflected Vector3
+
+**Example:**
+```lua
+local incoming = Vector3.new(1, -1, 0)
+local normal = Vector3.new(0, 1, 0) -- Up
+local reflected = quadUtils.reflect(incoming, normal)
+-- Returns Vector3.new(1, 1, 0)
+```
+
+## Integration with Construct Systems
+
+### ObjectSelector Usage
+
+QuadUtils is heavily used in the ObjectSelector for block manipulation:
+
+```lua
+-- From ObjectSelector/init.lua
+local quadUtils = require(game.ReplicatedStorage.Shared.Libraries.quadutils)
+
+-- Reset pivot when copying blocks
+local clone = model:Clone()
+quadUtils.ResetPivot(clone, "Center")
+
+-- Check if block fits in plot
+if quadUtils.IsSizeOutsideBounds(blockSize, plotBoundary) then
+    -- Reject placement
+end
+```
+
+### Atom System Integration
+
+Used in Atom for model manipulation:
+
+```lua
+-- Mirror blocks
+local mirroredCFrame = quadUtils.mirror(block.CFrame, mirrorPoint, mirrorNormal)
+
+-- Scale blocks from center
+quadUtils.ScalePartFrom(block, scaleVector, "Center")
+
+-- Check boundary constraints
+if quadUtils.IsPositionOutsideBounds(newPosition, plotBoundary) then
+    -- Constrain to boundary
+    newPosition = quadUtils.clampVector(newPosition, plot.Min, plot.Max)
+end
+```
+
+### UI System Usage
+
+Used for screen space calculations:
+
+```lua
+-- Convert world positions to screen for UI indicators
+local screenPos = quadUtils.WorldToScreen(camera, target.Position)
+if screenPos then
+    indicator.Visible = true
+    indicator.Position = screenPos
+else
+    indicator.Visible = false
+end
+```
+
+## Advanced Usage Patterns
+
+### Boundary Management System
+
+```lua
+local BoundarySystem = {}
+
+function BoundarySystem.create(plotPart)
+    return {
+        part = plotPart,
+        checkPosition = function(pos)
+            return quadUtils.IsPositionOutsideBounds(pos, plotPart)
+        end,
+        checkSize = function(size)
+            return quadUtils.IsSizeOutsideBounds(size, plotPart)
+        end,
+        clampPosition = function(pos)
+            local min = plotPart.Position - plotPart.Size/2
+            local max = plotPart.Position + plotPart.Size/2
+            return quadUtils.clampVector(pos, min, max)
+        end
+    }
+end
+
+-- Usage
+local plotBoundary = BoundarySystem.create(plotPart)
+if plotBoundary.checkPosition(playerPos) then
+    playerPos = plotBoundary.clampPosition(playerPos)
+end
+```
+
+### Model Manipulation Pipeline
+
+```lua
+function processModel(model, operations)
+    for _, op in ipairs(operations) do
+        if op.type == "pivot" then
+            quadUtils.ResetPivot(model, op.pivotType, op.customCFrame)
+        elseif op.type == "scale" then
+            for _, part in ipairs(model:GetChildren()) do
+                if part:IsA("BasePart") then
+                    quadUtils.ScalePartFrom(part, op.scale, op.pivot)
+                end
+            end
+        elseif op.type == "mirror" then
+            local cf = model:GetPivot()
+            local mirrored = quadUtils.mirror(cf, op.point, op.normal)
+            model:PivotTo(mirrored)
+        end
+    end
+end
+
+-- Usage
+processModel(myModel, {
+    {type = "pivot", pivotType = "Center"},
+    {type = "scale", scale = Vector3.new(2, 1, 2), pivot = "Bottom"},
+    {type = "mirror", point = Vector3.zero, normal = Vector3.xAxis}
+})
+```
+
+### Collision-Free Placement
+
+```lua
+function findValidPlacement(position, size, boundary, existingBlocks)
+    -- Start with desired position
+    local testPos = position
+
+    -- Check boundary
+    if quadUtils.IsPositionOutsideBounds(testPos, boundary) then
+        testPos = quadUtils.clampVector(testPos, boundary.Position - boundary.Size/2, boundary.Position + boundary.Size/2)
+    end
+
+    -- Check for collisions with existing blocks
+    for _, block in ipairs(existingBlocks) do
+        if quadUtils.IsPositionOutsideBounds(testPos, block) == false then
+            -- Collision detected, find alternative
+            local offset = size + Vector3.new(1, 1, 1) -- Small gap
+            testPos = testPos + offset
+        end
+    end
+
+    return testPos
+end
+```
+
+## Performance Considerations
+
+- **Caching**: Cache boundary checks for frequently used boundaries
+- **Bulk operations**: Process multiple items together when possible
+- **Early returns**: Use boundary checks to avoid expensive operations
+- **Vector math**: Prefer built-in operations over manual calculations
+
+## Error Handling
+
+```lua
+function safeBoundaryCheck(position, boundary)
+    if not position or not boundary then
+        return false
+    end
+
+    local success, result = pcall(function()
+        return quadUtils.IsPositionOutsideBounds(position, boundary)
+    end)
+
+    if success then
+        return result
+    else
+        warn("Boundary check failed:", result)
+        return false
+    end
+end
+```
+
+## See Also
+
+- [Snap Library](/libraries/snap)
+- [Atom System](/modding/atom-system)
+- [ObjectSelector](/modding/object-selector)
+- [Model Manipulation](/modding/model-manipulation)

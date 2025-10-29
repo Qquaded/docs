@@ -1,0 +1,596 @@
+---
+title: "Construct Ponder"
+description: "Interactive tutorial and demonstration system for Construct blocks and mechanics"
+---
+
+<Badge>Shared</Badge>
+
+## Description
+
+Construct Ponder is an advanced tutorial and demonstration system that creates interactive, animated presentations of Construct blocks and mechanics. It provides a cinematic way to showcase how blocks work, their interactions, and complex mechanical systems through scripted animations and visual effects.
+
+## Basic Usage
+
+```lua
+local Ponder = require(ReplicatedStorage.Shared.Libraries.ConstructPonder)
+
+-- Create a new ponder presentation
+local myPonder = Ponder.new({
+    {Position = Vector3.new(0, 1, 0), Id = "Motor"},
+    {Position = Vector3.new(0, 2, 0), Id = "Gear", Rotation = Vector3.new(0, 90, 0)},
+})
+
+-- Set up camera and viewport
+myPonder:SetupCamera(camera, myPonder.PreviewModel, viewportFrame)
+
+-- Add animation keypoints
+myPonder:addKeypoint(0, function(createdBlocks, janitor)
+    -- Show first block
+    myPonder:ShowModel(createdBlocks["Motor"][1])
+end)
+
+myPonder:addKeypoint(3, function(createdBlocks, janitor)
+    -- Show second block
+    myPonder:ShowModel(createdBlocks["Gear"][1])
+end)
+
+-- Play the presentation
+myPonder:play()
+```
+
+## Core Concepts
+
+### Block Data Structure
+Each block in a ponder presentation is defined with:
+
+```lua
+local blockData = {
+    Position = Vector3.new(x, y, z),  -- Grid position (multiplied by GridSize)
+    Rotation = Vector3.new(rx, ry, rz), -- Rotation in degrees (optional)
+    Id = "BlockName"  -- Block template name from ReplicatedStorage.Shared.Storage.Blocks
+}
+```
+
+### Timeline System
+Ponder uses a keyframe-based timeline for animations:
+
+- **Keypoints**: Specific times where actions occur
+- **Playback control**: Play, pause, seek, loop
+- **Speed control**: Adjust playback speed
+- **Direction control**: Forward/reverse playback
+
+### Visual Effects
+Built-in effects for blocks:
+- **Transparency animations**: Smooth show/hide transitions
+- **Position animations**: Blocks moving into place
+- **Camera movements**: Cinematic camera positioning
+- **Tooltips**: Contextual information display
+
+## API Reference
+
+### Ponder.new(data: BuildPonder, parent: Instance?)
+Creates a new Ponder instance.
+
+**Parameters:**
+- `data` (BuildPonder): Array of block data objects
+- `parent` (Instance, optional): Parent for the preview model
+
+**Returns:** Ponder instance
+
+**Example:**
+```lua
+local ponder = Ponder.new({
+    {Position = Vector3.new(0, 1, 0), Id = "Motor"},
+    {Position = Vector3.new(1, 1, 0), Id = "Gear"}
+}, workspace)
+```
+
+### ponder:SetupCamera(camera: Camera, model: Model, gui: GuiObject?)
+Configures the camera for the presentation.
+
+**Parameters:**
+- `camera` (Camera): Camera to control
+- `model` (Model): Model to focus on
+- `gui` (GuiObject, optional): GUI for mouse controls
+
+**Example:**
+```lua
+ponder:SetupCamera(workspace.CurrentCamera, ponder.PreviewModel, viewportFrame)
+```
+
+### ponder:addKeypoint(time: number, callback: function)
+Adds a keyframe at the specified time.
+
+**Parameters:**
+- `time` (number): Time in seconds
+- `callback` (function): Function called when keyframe is reached
+
+**Callback Parameters:**
+- `createdBlocks` ({[string]: {Model}}): Map of block types to arrays of instances
+- `janitor` (Janitor): Cleanup manager for this keyframe
+- `camera` (Camera): The configured camera
+
+**Example:**
+```lua
+ponder:addKeypoint(2.5, function(createdBlocks, janitor, camera)
+    local motor = createdBlocks["Motor"][1]
+    ponder:ShowModel(motor)
+
+    -- Add tooltip that cleans up automatically
+    ponder:CreateTooltip({
+        text = "This motor provides rotational force",
+        blockId = "Motor",
+        blockIndex = 1
+    }, janitor)
+end)
+```
+
+### ponder:ShowModel(block: Model)
+Animates a block into view from below.
+
+**Parameters:**
+- `block` (Model): Block to show
+
+**Example:**
+```lua
+local motor = createdBlocks["Motor"][1]
+ponder:ShowModel(motor)
+```
+
+### ponder:HideBlock(block: Model)
+Animates a block out of view downward.
+
+**Parameters:**
+- `block` (Model): Block to hide
+
+**Example:**
+```lua
+ponder:HideBlock(someBlock)
+```
+
+### ponder:CreateTooltip(config: TooltipConfig, janitor: Janitor?)
+Creates a floating tooltip attached to a block.
+
+**Parameters:**
+- `config` (TooltipConfig): Tooltip configuration
+- `janitor` (Janitor, optional): Cleanup manager
+
+**TooltipConfig:**
+```lua
+{
+    text = "Tooltip text",
+    blockId = "BlockType",     -- Block type to attach to
+    blockIndex = 1,            -- Which instance (default: 1)
+    offset = Vector3.new(0, 2, 0), -- Position offset (optional)
+    zindex = 10,               -- ZIndex (optional)
+    padding = UDim.new(0, 8),  -- Text padding (optional)
+    groundcolor = "#FFFFFF"    -- Background color (optional)
+}
+```
+
+**Example:**
+```lua
+ponder:CreateTooltip({
+    text = "This gear transfers rotational motion",
+    blockId = "Gear",
+    blockIndex = 1,
+    offset = Vector3.new(0, 3, 0),
+    groundcolor = "#4A90E2"
+}, janitor)
+```
+
+### ponder:MoveBlock(block: Model, position: Vector3, rotation: Vector3?)
+Animates a block to a new position and rotation.
+
+**Parameters:**
+- `block` (Model): Block to move
+- `position` (Vector3): New grid position
+- `rotation` (Vector3, optional): New rotation in degrees
+
+**Example:**
+```lua
+-- Move to grid position (2, 1, 0) with 90-degree Y rotation
+ponder:MoveBlock(gear, Vector3.new(2, 1, 0), Vector3.new(0, 90, 0))
+```
+
+### ponder:CameraMove(time: number, targetCFrame: CFrame, fov: number?)
+Adds a camera movement keyframe.
+
+**Parameters:**
+- `time` (number): Time for the movement
+- `targetCFrame` (CFrame): Target camera position/orientation
+- `fov` (number, optional): Target field of view
+
+**Returns:** Keyframe janitor
+
+**Example:**
+```lua
+ponder:CameraMove(5, CFrame.new(20, 15, 20) * CFrame.lookAt(Vector3.zero, Vector3.new(0, 1, 0)), 35)
+```
+
+### ponder:AddEffect(block: Model, effectName: string, ...)
+Adds a visual effect to a block.
+
+**Parameters:**
+- `block` (Model): Target block
+- `effectName` (string): Effect name
+- `...` (varargs): Effect parameters
+
+**Built-in Effects:**
+- `"spin"`: Rotates the block continuously
+- Custom effects can be added via the blockfx system
+
+**Example:**
+```lua
+-- Make a gear spin
+ponder:AddEffect(gear, "spin", 2) -- 2 RPM
+```
+
+### ponder:AddRunOnStep(instance: Instance, callback: function)
+Adds a callback that runs every frame for a specific instance.
+
+**Parameters:**
+- `instance` (Instance): Instance to monitor
+- `callback` (function): Function called each frame
+
+**Callback Parameters:**
+- `dt` (number): Delta time
+- `rosI` (RunOnStepInstance): Step instance for cleanup
+
+**Returns:** RunOnStepInstance for cleanup
+
+**Example:**
+```lua
+local stepInstance = ponder:AddRunOnStep(myBlock, function(dt, rosI)
+    -- Custom per-frame logic
+    myBlock.CFrame = myBlock.CFrame * CFrame.Angles(0, dt * 2, 0)
+
+    -- Stop after 5 seconds
+    if ponder.timeline.currentTime > 5 then
+        ponder:RemoveRunOnStep(rosI)
+    end
+end)
+```
+
+### ponder:RemoveRunOnStep(rosI: RunOnStepInstance)
+Removes a run-on-step callback.
+
+**Parameters:**
+- `rosI` (RunOnStepInstance): Step instance to remove
+
+### Timeline Control
+
+#### ponder:play()
+Starts or resumes playback.
+
+**Example:**
+```lua
+ponder:play()
+```
+
+#### ponder:pause()
+Pauses playback.
+
+**Example:**
+```lua
+ponder:pause()
+```
+
+#### ponder:stop()
+Stops playback and resets to beginning.
+
+**Example:**
+```lua
+ponder:stop()
+```
+
+#### ponder:seek(time: number)
+Jumps to a specific time.
+
+**Parameters:**
+- `time` (number): Time to seek to
+
+**Example:**
+```lua
+ponder:seek(10) -- Jump to 10 seconds
+```
+
+#### ponder:setSpeed(speed: number)
+Sets playback speed.
+
+**Parameters:**
+- `speed` (number): Speed multiplier
+
+**Example:**
+```lua
+ponder:setSpeed(2) -- 2x speed
+```
+
+#### ponder:setLooping(loop: boolean)
+Enables or disables looping.
+
+**Parameters:**
+- `loop` (boolean): Whether to loop
+
+**Example:**
+```lua
+ponder:setLooping(true)
+```
+
+### Configuration
+
+#### ponder.GridSize
+Size of each grid unit (default: 2.5)
+
+#### ponder.TileCount
+Number of tiles in the ground grid (default: 5)
+
+#### ponder.DefaultCameraCFrame
+Default camera position (default: CFrame.new(15, 25, 15))
+
+#### ponder.DefaultCameraFOV
+Default camera field of view (default: 40)
+
+#### ponder.Damping
+Spring damping for animations (default: 2)
+
+#### ponder.Frequency
+Spring frequency for animations (default: 5)
+
+## Advanced Features
+
+### Custom Block Effects
+
+Create custom effects by extending the blockfx system:
+
+```lua
+-- In your blockfx module
+return function(ponder)
+    function ponder.AddEffect(block, "glow", intensity)
+        ponder:AddRunOnStep(block, function(dt, rosI)
+            for _, part in ipairs(block:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    -- Add glow effect
+                    local light = part:FindFirstChild("GlowLight") or Instance.new("PointLight")
+                    light.Name = "GlowLight"
+                    light.Color = Color3.new(1, 1, 0)
+                    light.Range = intensity
+                    light.Parent = part
+                end
+            end
+        end)
+    end
+end
+```
+
+### Interactive Presentations
+
+Create presentations that respond to user input:
+
+```lua
+-- Add clickable elements
+ponder:addKeypoint(5, function(createdBlocks, janitor)
+    local button = createdBlocks["Button"][1]
+
+    -- Make button clickable during presentation
+    local clickDetector = Instance.new("ClickDetector")
+    clickDetector.Parent = button
+    clickDetector.MouseClick:Connect(function()
+        ponder:seek(10) -- Skip to next section
+    end)
+
+    janitor:Add(clickDetector)
+end)
+```
+
+### Multi-Camera Shots
+
+Use multiple camera angles for complex demonstrations:
+
+```lua
+-- Wide shot
+ponder:CameraMove(0, CFrame.new(25, 20, 25) * CFrame.lookAt(Vector3.zero, Vector3.new(0, 1, 0)))
+
+-- Close-up
+ponder:addKeypoint(3, function()
+    ponder:CameraMove(3, CFrame.new(5, 8, 5) * CFrame.lookAt(Vector3.zero, Vector3.new(0, 1, 0)), 25)
+end)
+
+-- Side view
+ponder:addKeypoint(8, function()
+    ponder:CameraMove(8, CFrame.new(15, 10, 0) * CFrame.lookAt(Vector3.zero, Vector3.new(0, 1, 0)))
+end)
+```
+
+### Conditional Logic
+
+Add conditional behavior based on presentation state:
+
+```lua
+ponder:addKeypoint(5, function(createdBlocks, janitor)
+    local motor = createdBlocks["Motor"][1]
+
+    -- Check if motor is already shown
+    if motor:GetAttribute("Visible") then
+        ponder:CreateTooltip({
+            text = "Motor is already active!",
+            blockId = "Motor"
+        }, janitor)
+    else
+        ponder:ShowModel(motor)
+        ponder:CreateTooltip({
+            text = "Activating motor...",
+            blockId = "Motor"
+        }, janitor)
+    end
+end)
+```
+
+## Integration with PonderDemo
+
+The PonderDemo system provides a framework for creating tutorial modules:
+
+```lua
+-- Tutorial module structure
+return {
+    CurrentPonderData = {
+        Description = "Tutorial Description",
+        Reference = blockTemplate -- Block to showcase
+    },
+    Callback = function(api, ponder)
+        -- Set up the tutorial
+        ponder.AddNewBlock({Position = Vector3.new(0, 1, 0), Id = "BlockName"})
+
+        -- Add keypoints
+        ponder:addKeypoint(0, function(created, janitor)
+            -- Tutorial logic
+        end)
+
+        return tutorialResult
+    end
+}
+```
+
+### PonderDemo Integration
+
+```lua
+-- In PonderDemo/init.lua
+signal:Connect(function(request, args, more)
+    if request == "Ponder" then
+        if args == "load" then
+            -- Load tutorial module
+            local loaded, result = loadDocumentation(tutorialName, api, myPonder, methods)
+            if loaded then
+                myPonder:play()
+            end
+        end
+    end
+end)
+```
+
+## Best Practices
+
+### Timeline Management
+- **Logical keypoint timing**: Space keypoints to allow animations to complete
+- **Cleanup resources**: Use janitors to clean up effects and connections
+- **Test playback**: Always test the full presentation from start to finish
+
+### Performance Optimization
+- **Limit concurrent effects**: Too many RunOnStep callbacks can impact performance
+- **Reuse effects**: Create effect templates rather than recreating them
+- **Cleanup aggressively**: Remove effects and connections when no longer needed
+
+### User Experience
+- **Clear tooltips**: Use concise, informative tooltip text
+- **Smooth transitions**: Allow time for animations to complete
+- **Progressive disclosure**: Reveal information gradually
+- **Interactive elements**: Add clickable elements where appropriate
+
+### Error Handling
+```lua
+ponder:addKeypoint(time, function(createdBlocks, janitor)
+    local success, result = pcall(function()
+        -- Risky operation
+        local block = createdBlocks["BlockName"][1]
+        if not block then
+            error("Block not found")
+        end
+        ponder:ShowModel(block)
+    end)
+
+    if not success then
+        warn("Keyframe failed:", result)
+        -- Continue with fallback
+    end
+end)
+```
+
+## Complete Example
+
+```lua
+local Ponder = require(ReplicatedStorage.Shared.Libraries.ConstructPonder)
+
+-- Create motor demonstration
+local motorDemo = Ponder.new({
+    {Position = Vector3.new(0, 1, 0), Id = "Motor"},
+    {Position = Vector3.new(0, 2, 0), Id = "Gear"},
+    {Position = Vector3.new(1, 2, 0), Id = "Part"}
+})
+
+-- Configure presentation
+motorDemo.GridSize = 2.5
+motorDemo.DefaultCameraCFrame = CFrame.new(15, 20, 15)
+
+-- Set up camera
+motorDemo:SetupCamera(workspace.CurrentCamera, motorDemo.PreviewModel)
+
+-- Introduction
+motorDemo:addKeypoint(0, function(created, janitor)
+    motorDemo:CreateTooltip({
+        text = "Welcome to the Motor Tutorial!",
+        blockId = "Motor",
+        offset = Vector3.new(0, 4, 0)
+    }, janitor)
+end)
+
+-- Show motor
+motorDemo:addKeypoint(3, function(created, janitor)
+    local motor = created["Motor"][1]
+    motorDemo:ShowModel(motor)
+
+    motorDemo:CreateTooltip({
+        text = "This is a motor. It provides rotational force to connected blocks.",
+        blockId = "Motor"
+    }, janitor)
+end)
+
+-- Show gear connection
+motorDemo:addKeypoint(8, function(created, janitor)
+    local gear = created["Gear"][1]
+    motorDemo:ShowModel(gear)
+
+    motorDemo:CreateTooltip({
+        text = "Gears transfer rotational motion between blocks.",
+        blockId = "Gear"
+    }, janitor)
+end)
+
+-- Demonstrate functionality
+motorDemo:addKeypoint(13, function(created, janitor)
+    local part = created["Part"][1]
+    motorDemo:ShowModel(part)
+    motorDemo:AddEffect(part, "spin")
+
+    motorDemo:CreateTooltip({
+        text = "Watch the part spin! This shows the motor's power.",
+        blockId = "Part"
+    }, janitor)
+end)
+
+-- Camera movement
+motorDemo:addKeypoint(18, function()
+    motorDemo:CameraMove(18, CFrame.new(8, 12, 8) * CFrame.lookAt(Vector3.zero, Vector3.new(0, 1, 0)), 30)
+end)
+
+-- Conclusion
+motorDemo:addKeypoint(23, function(created, janitor)
+    motorDemo:CreateTooltip({
+        text = "Motors are essential for creating dynamic mechanisms in Construct!",
+        blockId = "Motor",
+        offset = Vector3.new(0, 6, 0)
+    }, janitor)
+end)
+
+-- Enable looping for repeated viewing
+motorDemo:setLooping(true)
+
+-- Start the presentation
+motorDemo:play()
+```
+
+## See Also
+
+- [Timeline API](/libraries/ponder-timeline)
+- [Block Effects](/libraries/ponder-blockfx)
+- [PonderDemo System](/modding/ponder-demo)
+- [Tutorial Creation](/modding/tutorial-creation)

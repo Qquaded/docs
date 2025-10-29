@@ -1,0 +1,520 @@
+---
+title: "Signal"
+description: "Event system for communication between different parts of Construct"
+---
+
+<Badge>Shared</Badge>
+
+## Description
+
+The Signal class provides a robust event system for communication between different parts of Construct. Signals allow objects to emit events and other objects to listen for those events, enabling decoupled communication patterns throughout the application.
+
+## Creating Signals
+
+### Constructor
+```lua
+Signal.new(): Signal
+```
+
+Creates a new signal instance.
+
+**Returns:** A new Signal object
+
+**Example:**
+```lua
+local signal = CSignal.new()
+```
+
+### Registry System
+Signals can be managed through the global registry:
+
+```lua
+local Registry = require(ReplicatedStorage.Shared.Libraries.ConstructSignalRegistry)
+local registry = Registry.new()
+
+-- Get or create a signal
+local mySignal = registry:Get("MySignal") or registry:Create("MySignal")
+```
+
+## Methods
+
+### Fire(...)
+```lua
+signal:Fire(...any): ()
+```
+
+Fires the signal, calling all connected functions with the provided arguments.
+
+**Parameters:**
+- `...` (any): Arguments to pass to connected functions
+
+**Example:**
+```lua
+signal:Fire("Hello", 42, {key = "value"})
+```
+
+### Connect(callback)
+```lua
+signal:Connect(callback: (...any) -> ()): Connection
+```
+
+Connects a function to the signal that will be called every time the signal fires.
+
+**Parameters:**
+- `callback` (...any) -> (): Function to call when signal fires
+
+**Returns:** Connection object for managing the connection
+
+**Example:**
+```lua
+local connection = signal:Connect(function(message, number, data)
+    print(message, number) -- "Hello", 42
+    print(data.key) -- "value"
+end)
+```
+
+### Once(callback)
+```lua
+signal:Once(callback: (...any) -> ()): Connection
+```
+
+Connects a function that will be called only once, then automatically disconnects.
+
+**Parameters:**
+- `callback` (...any) -> (): Function to call once when signal fires
+
+**Returns:** Connection object for managing the connection
+
+**Example:**
+```lua
+local connection = signal:Once(function(message)
+    print("This will only print once:", message)
+end)
+```
+
+### Wait()
+```lua
+signal:Wait(): ...any
+```
+
+Yields the current thread until the signal fires, then returns the arguments.
+
+**Returns:** The arguments passed to Fire()
+
+**Example:**
+```lua
+task.spawn(function()
+    local message, number = signal:Wait()
+    print("Received:", message, number)
+end)
+
+signal:Fire("Hello", 42)
+```
+
+### DisconnectAll()
+```lua
+signal:DisconnectAll(): ()
+```
+
+Disconnects all connected functions from the signal.
+
+**Example:**
+```lua
+signal:DisconnectAll()
+```
+
+### Destroy()
+```lua
+signal:Destroy(): ()
+```
+
+Destroys the signal, disconnecting all connections and making it unusable.
+
+**Example:**
+```lua
+signal:Destroy()
+```
+
+### GetConnectionCount()
+```lua
+signal:GetConnectionCount(): number
+```
+
+Returns the number of active connections to the signal.
+
+**Returns:** Number of connected functions
+
+**Example:**
+```lua
+local count = signal:GetConnectionCount()
+print("Active connections:", count)
+```
+
+### IsDestroyed()
+```lua
+signal:IsDestroyed(): boolean
+```
+
+Checks if the signal has been destroyed.
+
+**Returns:** true if destroyed, false otherwise
+
+**Example:**
+```lua
+if signal:IsDestroyed() then
+    print("Signal is destroyed")
+end
+```
+
+### GetActiveFire()
+```lua
+signal:GetActiveFire(): {any}?
+```
+
+Returns the arguments from the currently active Fire() call, or nil if not firing.
+
+**Returns:** Array of arguments from current fire, or nil
+
+**Example:**
+```lua
+local args = signal:GetActiveFire()
+if args then
+    print("Currently firing with:", unpack(args))
+end
+```
+
+### IsFiring()
+```lua
+signal:IsFiring(): boolean
+```
+
+Checks if the signal is currently firing.
+
+**Returns:** true if currently firing, false otherwise
+
+**Example:**
+```lua
+if signal:IsFiring() then
+    print("Signal is currently firing")
+end
+```
+
+## Connection Object
+
+Connections returned by Connect() and Once() have the following properties:
+
+### Connected
+```lua
+connection.Connected: boolean
+```
+
+Whether the connection is still active.
+
+### Disconnect()
+```lua
+connection:Disconnect(): ()
+```
+
+Disconnects this specific connection.
+
+**Example:**
+```lua
+local connection = signal:Connect(function() end)
+connection:Disconnect()
+```
+
+## Usage Examples
+
+### Basic Event System
+```lua
+local signal = CSignal.new()
+
+-- Connect listeners
+local connection1 = signal:Connect(function(message)
+    print("Listener 1:", message)
+end)
+
+local connection2 = signal:Connect(function(message)
+    print("Listener 2:", message)
+end)
+
+-- Fire the signal
+signal:Fire("Hello World!")
+-- Output:
+-- Listener 1: Hello World!
+-- Listener 2: Hello World!
+
+-- Disconnect one listener
+connection1:Disconnect()
+
+signal:Fire("Goodbye!")
+-- Output:
+-- Listener 2: Goodbye!
+```
+
+### One-time Events
+```lua
+local signal = CSignal.new()
+
+signal:Once(function()
+    print("This will only run once")
+end)
+
+signal:Fire() -- Prints: "This will only run once"
+signal:Fire() -- Nothing happens
+```
+
+### Asynchronous Communication
+```lua
+local signal = CSignal.new()
+
+-- Simulate async operation
+task.spawn(function()
+    task.wait(2)
+    signal:Fire("Operation completed", {result = "success"})
+end)
+
+-- Wait for result
+local message, data = signal:Wait()
+print(message, data.result) -- "Operation completed", "success"
+```
+
+### Object Communication
+```lua
+local PlayerManager = {
+    _signal = CSignal.new(),
+}
+
+function PlayerManager:OnPlayerJoined(player)
+    self._signal:Fire("PlayerJoined", player)
+end
+
+function PlayerManager:ConnectToPlayerJoined(callback)
+    return self._signal:Connect(callback)
+end
+
+-- Usage
+local manager = PlayerManager
+
+local connection = manager:ConnectToPlayerJoined(function(event, player)
+    print(event, player.Name)
+end)
+
+-- Simulate player joining
+local fakePlayer = {Name = "TestPlayer"}
+manager:OnPlayerJoined(fakePlayer)
+```
+
+## Registry Usage
+
+### Global Signal Management
+```lua
+local Registry = require(ReplicatedStorage.Shared.Libraries.ConstructSignalRegistry)
+local registry = Registry.new()
+
+-- Create or get global signals
+local uiSignal = registry:Create("UISignal")
+local gameSignal = registry:Get("GameSignal") or registry:Create("GameSignal")
+
+-- Use signals across different parts of the application
+uiSignal:Connect(function(action, data)
+    print("UI Action:", action, data)
+end)
+
+gameSignal:Fire("GameStarted", {mode = "creative"})
+```
+
+### Signal Cleanup
+```lua
+local registry = Registry.new()
+
+-- Create temporary signal
+local tempSignal = registry:Create("TempSignal")
+
+-- Use signal...
+tempSignal:Fire("temp event")
+
+-- Clean up
+registry:Remove("TempSignal")
+
+-- Or clear all
+registry:Clear()
+```
+
+## Integration with Construct Systems
+
+### Vision Framework
+Signals work seamlessly with Vision's networking:
+
+```lua
+local vision = require(ReplicatedStorage.Vision)
+local signal = CSignal.new()
+
+-- Connect to Vision remote
+local remote = vision:remote("MyRemote")
+remote:Connect(function(...)
+    signal:Fire("RemoteEvent", ...)
+end)
+```
+
+### Construct API
+Signals are used throughout the Construct API:
+
+```lua
+local ConstructAPI = require(ReplicatedStorage.Shared.Locations)
+local clientSignal = ConstructAPI:Get("Client")
+
+-- Listen for client events
+clientSignal:Connect(function(eventType, data)
+    if eventType == "PluginLoaded" then
+        print("Plugin loaded:", data.name)
+    end
+end)
+```
+
+### Atom System
+Blocks use signals for communication:
+
+```lua
+-- In a block functionality module
+function MyBlock.LaunchedClient(block, build, identifier, config, atom)
+    local signal = CSignal.new()
+
+    -- Expose signal for other blocks
+    atom:SetPropertyValue(block, "Signal", signal)
+
+    return signal
+end
+```
+
+## Best Practices
+
+### Connection Management
+```lua
+local connections = {}
+
+function connectToSignal(signal, callback)
+    local connection = signal:Connect(callback)
+    table.insert(connections, connection)
+    return connection
+end
+
+function cleanupConnections()
+    for _, connection in ipairs(connections) do
+        connection:Disconnect()
+    end
+    connections = {}
+end
+```
+
+### Error Handling
+```lua
+local success, result = pcall(function()
+    signal:Fire("event", data)
+end)
+
+if not success then
+    warn("Failed to fire signal:", result)
+end
+```
+
+### Memory Management
+```lua
+-- Always destroy signals when done
+local signal = CSignal.new()
+
+-- ... use signal ...
+
+signal:Destroy() -- Clean up resources
+```
+
+### Thread Safety
+```lua
+-- Signals are thread-safe for firing
+task.spawn(function()
+    signal:Fire("async event")
+end)
+
+-- But connections should be managed carefully
+local connection = signal:Connect(function()
+    -- This runs in the firing thread
+    print("Event received")
+end)
+```
+
+## Common Patterns
+
+### Event Bus
+```lua
+local EventBus = {
+    _signals = {},
+}
+
+function EventBus:GetSignal(eventName)
+    if not self._signals[eventName] then
+        self._signals[eventName] = CSignal.new()
+    end
+    return self._signals[eventName]
+end
+
+function EventBus:Fire(eventName, ...)
+    local signal = self:GetSignal(eventName)
+    signal:Fire(...)
+end
+
+function EventBus:Connect(eventName, callback)
+    local signal = self:GetSignal(eventName)
+    return signal:Connect(callback)
+end
+
+-- Usage
+EventBus:Connect("PlayerJoined", function(player)
+    print(player.Name .. " joined")
+end)
+
+EventBus:Fire("PlayerJoined", player)
+```
+
+### State Management
+```lua
+local StateManager = {
+    _stateSignal = CSignal.new(),
+    _state = {},
+}
+
+function StateManager:SetState(newState)
+    self._state = table.clone(newState)
+    self._stateSignal:Fire("StateChanged", self._state)
+end
+
+function StateManager:GetState()
+    return table.clone(self._state)
+end
+
+function StateManager:ConnectToStateChanges(callback)
+    return self._stateSignal:Connect(callback)
+end
+```
+
+## Performance Considerations
+
+- Signals are optimized for frequent firing
+- Connection/disconnection is O(n) where n is connection count
+- Use Once() for one-time events to avoid manual disconnection
+- Destroy signals when no longer needed to free memory
+- Consider using global registry for frequently accessed signals
+
+## Notes
+
+- Signals are asynchronous - connected functions run in separate threads
+- Destroyed signals cannot be reused
+- Connections remain valid until explicitly disconnected or signal destroyed
+- Wait() will yield the current thread until next fire
+- All signal operations are thread-safe
+
+## See Also
+
+- [Construct API](/modding/construct-api)
+- [Vision Framework](/modding/vision-framework)
+- [Atom System](/modding/atom-system)
+- [Construct Signal Registry](/libraries/construct-signal-registry)

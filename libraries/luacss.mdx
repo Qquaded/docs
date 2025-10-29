@@ -194,7 +194,7 @@ luacss.addEnvValue("primaryColor", Color3.fromRGB(100, 150, 255))
 local button = luacss.compileObject({
 	class = "TextButton",
 	Text = "Themed Button",
-	BackgroundColor3 = luacss.value("primaryColor"),
+	BackgroundColor3 = luacss.getEnvValue("primaryColor"),
 })
 
 -- Change the color reactively

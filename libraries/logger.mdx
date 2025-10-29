@@ -1,144 +1,344 @@
 ---
 title: "Logger"
-description: "Comprehensive logging system for debugging and monitoring in Construct"
+description: "Debugging and logging utility library for Construct development"
 ---
 
-<Badge>Client and Server</Badge>
+<Badge>Shared</Badge>
 
 ## Description
 
-The Logger library provides a comprehensive logging system for debugging, monitoring, and error tracking in Construct. It offers multiple log levels and can be toggled on/off via LogService messages.
+The Logger library provides comprehensive debugging and logging functionality used throughout Construct. It offers structured logging with different severity levels, debug stepping with file/line information, and toggle-able output control.
 
-## Methods
+## Basic Usage
 
-### Log
-```lua
-Logger.Log(name: string, desc: string)
-```
-
-Logs a general message.
-
-**Parameters:**
-- `name` (string): Identifier for the logging source
-- `desc` (string): Description of the event
-
-### Error
-```lua
-Logger.Error(name: string, desc: string)
-```
-
-Logs an error message and throws an error.
-
-**Parameters:**
-- `name` (string): Identifier for the logging source
-- `desc` (string): Error description
-
-### Warn
-```lua
-Logger.Warn(name: string, desc: string)
-```
-
-Logs a warning message.
-
-**Parameters:**
-- `name` (string): Identifier for the logging source
-- `desc` (string): Warning description
-
-### Assert
-```lua
-Logger.Assert(item: any, name: string, desc: string)
-```
-
-Asserts that an item exists, logging an error if it doesn't.
-
-**Parameters:**
-- `item` (any): Item to check for existence
-- `name` (string): Identifier for the logging source
-- `desc` (string): Error description if assertion fails
-
-### Debug
-```lua
-Logger.Debug(name: string, desc: string)
-```
-
-Logs a debug message.
-
-**Parameters:**
-- `name` (string): Identifier for the logging source
-- `desc` (string): Debug description
-
-### DebugStep
-```lua
-Logger.DebugStep(name: string, desc?: string)
-```
-
-Logs a debug step with line number and script information.
-
-**Parameters:**
-- `name` (string): Identifier for the logging source
-- `desc` (string?): Optional step description
-
-### ResetCounter
-```lua
-Logger.ResetCounter()
-```
-
-Resets the debug step counter.
-
-## Features
-
-- **Toggle-able Logging**: Send "dblogs" message via LogService to toggle logging on/off
-- **Debug Step Tracking**: Includes file name and line number in debug steps
-- **Multiple Log Levels**: Log, Error, Warn, Assert, Debug, DebugStep
-- **Source Identification**: Each log entry includes a source identifier
-
-## Usage Examples
-
-### Basic Logging
 ```lua
 local Logger = require(ReplicatedStorage.Shared.Libraries.Logger)
 
-Logger.Log("MySystem", "System initialized successfully")
-Logger.Warn("MySystem", "Low memory warning")
-Logger.Error("MySystem", "Critical error occurred")
+-- Basic logging
+Logger.Log("MyModule", "This is a log message")
+Logger.Warn("MyModule", "This is a warning")
+Logger.Error("MyModule", "This is an error")
+Logger.Assert(condition, "MyModule", "Assertion failed message")
 ```
 
-### Debug Logging
+## Methods
+
+### Log(name: string, desc: string)
+Logs a general information message.
+
+**Parameters:**
+- `name` (string): Module or component name
+- `desc` (string): Description message
+
+**Example:**
 ```lua
-Logger.Debug("PlayerManager", "Processing player join")
-Logger.DebugStep("PlayerManager", "Validating player data")
-Logger.DebugStep("PlayerManager", "Setting up player environment")
-Logger.DebugStep("PlayerManager", "Player setup complete")
+Logger.Log("PlayerManager", "Player joined the game")
 ```
 
-### Assertion Checks
-```lua
-local playerData = getPlayerData(playerId)
-Logger.Assert(playerData, "PlayerManager", "Player data not found")
+### Error(name: string, desc: string)
+Logs an error message and throws an error.
 
-local config = loadConfiguration()
-Logger.Assert(config, "ConfigManager", "Failed to load configuration")
+**Parameters:**
+- `name` (string): Module or component name
+- `desc` (string): Error description
+
+**Example:**
+```lua
+Logger.Error("DataService", "Failed to save player data")
+```
+
+### Warn(name: string, desc: string)
+Logs a warning message.
+
+**Parameters:**
+- `name` (string): Module or component name
+- `desc` (string): Warning description
+
+**Example:**
+```lua
+Logger.Warn("Inventory", "Player inventory is full")
+```
+
+### Assert(item: any, name: string, desc: string)
+Asserts that an item is truthy, throwing an error if false.
+
+**Parameters:**
+- `item` (any): Item to check
+- `name` (string): Module or component name
+- `desc` (string): Error description if assertion fails
+
+**Example:**
+```lua
+Logger.Assert(playerData, "PlayerService", "Player data not found")
+```
+
+### Debug(name: string, desc: string)
+Logs a debug message (only when logging is enabled).
+
+**Parameters:**
+- `name` (string): Module or component name
+- `desc` (string): Debug description
+
+**Example:**
+```lua
+Logger.Debug("Physics", "Calculating collision at position " .. tostring(position))
+```
+
+### DebugStep(name: string, desc: string?)
+Logs a debug step with file and line information.
+
+**Parameters:**
+- `name` (string): Module or component name
+- `desc` (string, optional): Step description (defaults to step counter)
+
+**Example:**
+```lua
+Logger.DebugStep("Atom", "Starting block launch")
+-- Output: [Atom | DEBUGSTEP 1 (Atom.lua:line 45)] Starting block launch
+
+Logger.DebugStep("Atom") -- Uses default message
+-- Output: [Atom | DEBUGSTEP 2 (Atom.lua:line 67)] Ran step 2
+```
+
+### ResetCounter()
+Resets the debug step counter to 0.
+
+**Example:**
+```lua
+Logger.ResetCounter() -- Next DebugStep will start from 1
+```
+
+## Logging Control
+
+### Toggle Logging
+Logging can be toggled by sending a message through LogService:
+
+```lua
+-- In Roblox Studio console or through LogService
+LogService:MessageOut("dblogs") -- Toggles logging on/off
+```
+
+### Current State
+The logger maintains an internal `enabled` state that controls all output except errors.
+
+## Usage Patterns
+
+### Module Initialization
+```lua
+local Logger = require(ReplicatedStorage.Shared.Libraries.Logger)
+
+local MyModule = {}
+
+function MyModule.init()
+    Logger.Log("MyModule", "Initializing module")
+    -- ... initialization code
+    Logger.Debug("MyModule", "Module initialized successfully")
+end
+
+return MyModule
 ```
 
 ### Error Handling
 ```lua
-local success, result = pcall(function()
-	return performRiskyOperation()
-end)
+function safeOperation()
+    local success, result = pcall(function()
+        -- Risky operation
+        return performOperation()
+    end)
 
-if not success then
-	Logger.Error("OperationManager", `Operation failed: {result}`)
+    if not success then
+        Logger.Error("MyModule", "Operation failed: " .. result)
+    end
+
+    return success, result
 end
 ```
 
-## Notes
+### Debug Stepping
+```lua
+function complexProcess(data)
+    Logger.DebugStep("Process", "Starting complex process")
 
-- Logging can be disabled by sending "dblogs" message via LogService
-- DebugStep includes automatic line number and script name tracking
-- Error method throws an error after logging
-- Assert method throws an error if the assertion fails
+    -- Step 1
+    local processed = preprocess(data)
+    Logger.DebugStep("Process", "Completed preprocessing")
+
+    -- Step 2
+    local validated = validate(processed)
+    Logger.DebugStep("Process", "Completed validation")
+
+    -- Step 3
+    local result = finalize(validated)
+    Logger.DebugStep("Process", "Completed finalization")
+
+    Logger.ResetCounter() -- Reset for next operation
+    return result
+end
+```
+
+### Conditional Logging
+```lua
+function updatePlayer(player, deltaTime)
+    -- Only log in debug mode
+    Logger.Debug("PlayerUpdate", string.format(
+        "Updating player %s (delta: %.3f)",
+        player.Name,
+        deltaTime
+    ))
+
+    -- Always log errors
+    if not player.Character then
+        Logger.Error("PlayerUpdate", "Player has no character")
+        return
+    end
+
+    -- Process update
+    updateCharacter(player.Character, deltaTime)
+end
+```
+
+## Integration with Construct Systems
+
+### Vision Framework
+The Logger integrates with Vision's error handling:
+
+```lua
+local vision = require(ReplicatedStorage.Vision)
+
+vision:start()
+
+-- Vision uses Logger internally for its operations
+Logger.Debug("Vision", "Framework initialized")
+```
+
+### Atom System
+Used extensively in Atom for debugging complex operations:
+
+```lua
+local Atom = require(ReplicatedStorage.Shared.Libraries.Atom)
+
+function launchBlock()
+    Logger.DebugStep("Atom", "Starting block launch")
+
+    -- Complex launch logic with multiple steps
+    Logger.DebugStep("Atom", "Validating block data")
+    Logger.DebugStep("Atom", "Setting up network promises")
+    Logger.DebugStep("Atom", "Launching block")
+
+    Logger.ResetCounter()
+end
+```
+
+### Client Systems
+Used in client modules for debugging UI and input:
+
+```lua
+-- In a client module
+local client = ConstructAPI:Get("Client")
+
+function handleInput(input)
+    Logger.Debug("InputHandler", "Received input: " .. input.UserInputType.Name)
+
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        Logger.DebugStep("InputHandler", "Processing mouse click")
+        processClick(input.Position)
+    end
+end
+```
+
+## Best Practices
+
+### Consistent Naming
+Use consistent module names across your codebase:
+
+```lua
+-- Good
+Logger.Log("PlayerService", "Player connected")
+Logger.Log("PlayerService", "Player disconnected")
+
+-- Avoid
+Logger.Log("Player", "Player connected")
+Logger.Log("PlayerManager", "Player disconnected")
+```
+
+### Appropriate Log Levels
+Choose the right log level for different situations:
+
+- **Log**: General information, successful operations
+- **Warn**: Potential issues that don't break functionality
+- **Error**: Critical failures that require attention
+- **Debug**: Detailed information for troubleshooting
+- **Assert**: Validation of critical assumptions
+
+### Performance Considerations
+```lua
+-- Good: Build complex messages only when needed
+Logger.Debug("Physics", string.format(
+    "Collision detected at (%.2f, %.2f, %.2f)",
+    position.X, position.Y, position.Z
+))
+
+-- Avoid: Always building strings
+local message = string.format("Expensive calculation: %s", complexCalculation())
+Logger.Debug("Math", message) -- String built even if debug disabled
+```
+
+### Debug Step Usage
+Use DebugStep for complex operations with multiple phases:
+
+```lua
+function processBuild(build)
+    Logger.DebugStep("BuildProcessor", "Starting build processing")
+
+    Logger.DebugStep("BuildProcessor", "Validating build data")
+    validateBuild(build)
+
+    Logger.DebugStep("BuildProcessor", "Processing blocks")
+    processBlocks(build)
+
+    Logger.DebugStep("BuildProcessor", "Applying physics")
+    applyPhysics(build)
+
+    Logger.DebugStep("BuildProcessor", "Build processing complete")
+
+    Logger.ResetCounter() -- Clean up for next build
+end
+```
+
+## Output Format
+
+All logger output follows a consistent format:
+
+```
+[ModuleName | LEVEL] Message
+[ModuleName | DEBUGSTEP N (file.lua:line L)] Message
+```
+
+Examples:
+```
+[PlayerService | LOG] Player joined successfully
+[PhysicsEngine | WARN] High CPU usage detected
+[DataService | ERROR] Failed to connect to database
+[Network | DEBUG] Received packet from server
+[Atom | DEBUGSTEP 3 (Atom.lua:line 127)] Processing block configuration
+```
+
+## Error Integration
+
+The logger automatically integrates with Roblox's error handling:
+
+```lua
+-- Errors are automatically logged through LogService
+LogService.MessageOut:Connect(function(message, messageType)
+    if messageType == Enum.MessageType.MessageError then
+        -- Logger handles this automatically
+    end
+end)
+```
 
 ## See Also
 
 - [Vision Framework](/modding/vision-framework)
+- [Atom System](/modding/atom-system)
 - [Construct API](/modding/construct-api)
+- [Client Signal API](/modding/client-signal-api)

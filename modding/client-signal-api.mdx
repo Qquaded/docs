@@ -1,0 +1,603 @@
+---
+title: "Client Signal API"
+description: "Complete reference for client-side signal events and communication in Construct"
+---
+
+<Badge>Client</Badge>
+
+## Overview
+
+The Client Signal API provides a centralized event system for communication between different client-side modules and plugins in Construct. The `client` signal (accessed via `ConstructAPI:Get("Client")`) is the primary mechanism for inter-module communication.
+
+## Getting Started
+
+```lua
+local ConstructAPI = require(ReplicatedStorage.Shared.Locations)
+local client = ConstructAPI:Get("Client")
+
+-- Fire an event
+client:Fire("MyEvent", data)
+
+-- Listen for events
+client:Connect(function(eventType, eventData)
+    if eventType == "MyEvent" then
+        handleMyEvent(eventData)
+    end
+end)
+```
+
+## Core Events
+
+### Plugin Management
+
+#### RemovePlugin
+Removes a plugin from the cache and calls its cleanup function.
+
+**Parameters:**
+- `data` (table): Plugin data containing `Name` field
+
+**Example:**
+```lua
+client:Fire("RemovePlugin", {Name = "MyPlugin"})
+```
+
+**Handler:**
+```lua
+client:Connect(function(request, data)
+    if request == "RemovePlugin" then
+        -- Plugin cleanup logic
+        print("Removing plugin:", data.Name)
+    end
+end)
+```
+
+#### RefreshPlugins
+Reloads all cached plugins.
+
+**Parameters:** None
+
+**Example:**
+```lua
+client:Fire("RefreshPlugins")
+```
+
+**Handler:**
+```lua
+client:Connect(function(request)
+    if request == "RefreshPlugins" then
+        -- Refresh all plugins
+        print("Refreshing all plugins")
+    end
+end)
+```
+
+### Object Menu Events
+
+#### ObjectMenuOpened
+Fired when the object menu is opened.
+
+**Parameters:** None
+
+**Example:**
+```lua
+client:Fire("ObjectMenuOpened")
+```
+
+#### ObjectMenuClosed
+Fired when the object menu is closed.
+
+**Parameters:** None
+
+**Example:**
+```lua
+client:Fire("ObjectMenuClosed")
+```
+
+### Block Management
+
+#### AddedBlock
+Fired when a new block is added to the block storage.
+
+**Parameters:**
+- `blockName` (string): Name of the added block
+- `fullName` (string): Full path name of the block
+
+**Example:**
+```lua
+client:Fire("AddedBlock", "MyBlock", "ReplicatedStorage.Shared.Storage.Blocks.MyBlock")
+```
+
+#### RemovedBlock
+Fired when a block is removed from the block storage.
+
+**Parameters:**
+- `blockName` (string): Name of the removed block
+- `fullName` (string): Full path name of the block
+
+**Example:**
+```lua
+client:Fire("RemovedBlock", "MyBlock", "ReplicatedStorage.Shared.Storage.Blocks.MyBlock")
+```
+
+#### CreatedBlock
+Fired when a block is created in the viewport.
+
+**Parameters:**
+- `blockName` (string): Name of the created block
+- `fullName` (string): Full path name of the block
+
+**Example:**
+```lua
+client:Fire("CreatedBlock", "MyBlock", "Workspace.MyBlock")
+```
+
+### Placement System
+
+#### PlacementRenderStep
+Fired every render step during block placement.
+
+**Parameters:**
+- `currentPart` (BasePart): The part being placed
+
+**Example:**
+```lua
+client:Fire("PlacementRenderStep", currentPart)
+```
+
+#### Rotated
+Fired when the placement rotation is changed.
+
+**Parameters:**
+- `orientation` (CFrame): New orientation of the placement
+
+**Example:**
+```lua
+client:Fire("Rotated", CFrame.Angles(0, math.rad(90), 0))
+```
+
+#### CreatedCurrentPart
+Fired when a new part is set as the current placement part.
+
+**Parameters:** None
+
+**Example:**
+```lua
+client:Fire("CreatedCurrentPart")
+```
+
+#### RemoveCurrentPart
+Fired when the current placement part is removed.
+
+**Parameters:** None
+
+**Example:**
+```lua
+client:Fire("RemoveCurrentPart")
+```
+
+### Cursor System
+
+#### Cursor
+Fired for cursor state changes.
+
+**Parameters:**
+- `action` (string): Cursor action ("RunStatus", "StopStatus", "Rotate")
+- `data` (any, optional): Additional data for the action
+
+**Examples:**
+```lua
+client:Fire("Cursor", "RunStatus")
+client:Fire("Cursor", "StopStatus")
+client:Fire("Cursor", "Rotate", {Angle = 15})
+```
+
+### Viewport Management
+
+#### SearchViewports
+Fired when the viewport search is updated.
+
+**Parameters:**
+- `searchText` (string): Current search text
+
+**Example:**
+```lua
+client:Fire("SearchViewports", "engine")
+```
+
+#### CloseViewports
+Fired to close all open viewports.
+
+**Parameters:** None
+
+**Example:**
+```lua
+client:Fire("CloseViewports")
+```
+
+#### OpenWithCategory
+Fired to open viewports for a specific category.
+
+**Parameters:**
+- `category` (string): Block category to open
+
+**Example:**
+```lua
+client:Fire("OpenWithCategory", "Mechanics")
+```
+
+### Tool System
+
+#### CreateDockButton
+Creates a new dock button.
+
+**Parameters:**
+- `config` (table): Button configuration with fields:
+  - `Image` (string): Button image asset ID
+  - `ActivatedImage` (string, optional): Image when activated
+  - `Color` (Color3, optional): Button color
+  - `Callback` (function): Click callback
+  - `EndedCallback` (function, optional): End callback
+  - `Name` (string): Button name
+  - `Keycode` (Enum.KeyCode, optional): Hotkey
+  - `DockParent` (string): Parent dock ("BottomDock", etc.)
+
+**Example:**
+```lua
+client:Fire("CreateDockButton", {
+    Image = "rbxassetid://123456789",
+    Callback = function() print("Button clicked!") end,
+    EndedCallback = function() print("Button ended!") end,
+    Name = "MyTool",
+    Keycode = Enum.KeyCode.T,
+    DockParent = "BottomDock"
+})
+```
+
+### Edit Tool Events
+
+#### EditToolOpened
+Fired when the edit tool is opened.
+
+**Parameters:** None
+
+**Example:**
+```lua
+client:Fire("EditToolOpened")
+```
+
+#### EditToolClosed
+Fired when the edit tool is closed.
+
+**Parameters:** None
+
+**Example:**
+```lua
+client:Fire("EditToolClosed")
+```
+
+#### ConfigWindowOpened
+Fired when a configuration window is opened.
+
+**Parameters:** None
+
+**Example:**
+```lua
+client:Fire("ConfigWindowOpened")
+```
+
+#### EditSelectorState
+Fired to change the edit selector state.
+
+**Parameters:**
+- `enabled` (boolean): Whether selection is enabled
+
+**Example:**
+```lua
+client:Fire("EditSelectorState", true)
+```
+
+### Ponder System
+
+#### Ponder
+Fired for ponder tutorial actions.
+
+**Parameters:**
+- `action` (string): Ponder action ("load", etc.)
+- `data` (any): Action data
+
+**Examples:**
+```lua
+client:Fire("Ponder", "load", "Motor")
+```
+
+### Gamepad Support
+
+#### GamepadConnected
+Fired when a gamepad is connected.
+
+**Parameters:** None
+
+**Example:**
+```lua
+client:Fire("GamepadConnected")
+```
+
+#### GamepadDisconnected
+Fired when a gamepad is disconnected.
+
+**Parameters:** None
+
+**Example:**
+```lua
+client:Fire("GamepadDisconnected")
+```
+
+### Settings and Keycodes
+
+#### SetKeycodeRotation
+Sets the keycode for rotation axes.
+
+**Parameters:**
+- `axis` (string): Rotation axis ("R", "T", "Y")
+- `keycode` (Enum.KeyCode): New keycode
+
+**Examples:**
+```lua
+client:Fire("SetKeycodeRotation", "R", Enum.KeyCode.ButtonX)
+client:Fire("SetKeycodeRotation", "T", Enum.KeyCode.ButtonY)
+client:Fire("SetKeycodeRotation", "Y", Enum.KeyCode.ButtonB)
+```
+
+#### SetPlacingKeycode
+Sets the keycode for block placement.
+
+**Parameters:**
+- `keycode` (Enum.KeyCode | Enum.UserInputType): New placement key
+
+**Examples:**
+```lua
+client:Fire("SetPlacingKeycode", Enum.KeyCode.ButtonR2)
+client:Fire("SetPlacingKeycode", Enum.UserInputType.MouseButton1)
+```
+
+### Block Categories
+
+#### NewBlockCategory
+Fired when a new block category is added.
+
+**Parameters:**
+- `category` (string): New category name
+
+**Example:**
+```lua
+client:Fire("NewBlockCategory", "Electronics")
+```
+
+## Event Handler Patterns
+
+### ObjectSelector Module
+
+The ObjectSelector module handles these events:
+
+```lua
+client:Connect(function(request, axis, keycode)
+    -- Handle keycode settings
+    if request == "SetKeycodeRotation" then
+        if axis == "R" then R = keycode
+        elseif axis == "T" then T = keycode
+        elseif axis == "Y" then Y = keycode end
+    elseif request == "SetPlacingKeycode" then
+        Click = axis
+    end
+end)
+
+client:Connect(function(arg, axis)
+    -- Handle rotation and part management
+    if arg == "Rotate" then
+        -- Handle rotation logic
+    elseif arg == "NewBlockCategory" then
+        -- Handle new category
+    elseif arg == "SetCurrentPart" then
+        CurrentPart = axis:Clone()
+        client:Fire("CreatedCurrentPart")
+    elseif arg == "RemoveCurrentPart" then
+        if CurrentPart then
+            CurrentPart:Destroy()
+            CurrentPart = nil
+        end
+    end
+end)
+```
+
+### Info Module
+
+The Info module handles info slot requests:
+
+```lua
+client:Connect(function(request, data)
+    if request == "NewInfoSlot" then
+        -- Create new info slot
+        createInfoSlot(data)
+    end
+end)
+```
+
+### EditTool Module
+
+The EditTool handles edit-related events:
+
+```lua
+client:Connect(function(arg, id)
+    if arg == "DisableEditSelectorVisible" then
+        -- Disable edit selector
+        selectorVisible = false
+    end
+end)
+```
+
+### BuildInViewports Plugin
+
+Handles placement rendering:
+
+```lua
+client:Connect(function(z, part)
+    if z == "PlacementRenderStep" then
+        -- Update placement preview
+        updatePlacementPreview(part)
+    end
+end)
+```
+
+### Cursor Plugin
+
+Handles cursor state changes:
+
+```lua
+client:Connect(function(user, request, data)
+    if user == "Cursor" then
+        if request == "RunStatus" then
+            -- Show running cursor
+        elseif request == "StopStatus" then
+            -- Show default cursor
+        elseif request == "Rotate" then
+            -- Handle rotation cursor
+        end
+    end
+end)
+```
+
+## Best Practices
+
+### Event Naming
+- Use descriptive, action-oriented names
+- Follow consistent naming patterns
+- Avoid generic names like "Update" or "Change"
+
+### Parameter Structure
+- Keep parameters simple and consistent
+- Use tables for complex data
+- Document parameter types and purposes
+
+### Error Handling
+```lua
+client:Connect(function(eventType, data)
+    local success, result = pcall(function()
+        handleEvent(eventType, data)
+    end)
+
+    if not success then
+        warn("Failed to handle event:", eventType, result)
+    end
+end)
+```
+
+### Memory Management
+- Disconnect event handlers when modules unload
+- Avoid circular references in event data
+- Clean up resources in plugin removal handlers
+
+### Performance Considerations
+- Minimize event frequency for high-traffic events
+- Use specific event types instead of generic ones
+- Batch related updates into single events
+
+## Common Patterns
+
+### State Management
+```lua
+-- Module state
+local moduleState = {
+    active = false,
+    currentTool = nil
+}
+
+-- State change events
+function setActive(active)
+    moduleState.active = active
+    client:Fire("ModuleStateChanged", {active = active})
+end
+
+function setCurrentTool(tool)
+    moduleState.currentTool = tool
+    client:Fire("CurrentToolChanged", tool)
+end
+
+-- Listen for state changes
+client:Connect(function(eventType, data)
+    if eventType == "ModuleStateChanged" then
+        updateUI(data.active)
+    elseif eventType == "CurrentToolChanged" then
+        switchTool(data)
+    end
+end)
+```
+
+### Request-Response Pattern
+```lua
+-- Request data
+client:Fire("RequestBlockData", blockId)
+
+-- Handle response
+client:Connect(function(eventType, data)
+    if eventType == "BlockDataResponse" then
+        if data.blockId == requestedId then
+            processBlockData(data)
+        end
+    end
+end)
+```
+
+### Plugin Communication
+```lua
+-- Plugin A sends data to Plugin B
+client:Fire("PluginMessage", {
+    from = "PluginA",
+    to = "PluginB",
+    data = myData
+})
+
+-- Plugin B receives message
+client:Connect(function(eventType, message)
+    if eventType == "PluginMessage" and message.to == "PluginB" then
+        handlePluginMessage(message.from, message.data)
+    end
+end)
+```
+
+## Complete Event Reference
+
+| Event | Parameters | Description | Source |
+|-------|------------|-------------|--------|
+| RemovePlugin | `{Name: string}` | Remove a plugin | Client.client.lua |
+| RefreshPlugins | None | Reload all plugins | Client.client.lua |
+| ObjectMenuOpened | None | Object menu opened | ObjectSelector |
+| ObjectMenuClosed | None | Object menu closed | ObjectSelector |
+| AddedBlock | `blockName, fullName` | Block added to storage | ObjectSelector |
+| RemovedBlock | `blockName, fullName` | Block removed from storage | ObjectSelector |
+| CreatedBlock | `blockName, fullName` | Block created in viewport | ObjectSelector/viewport |
+| PlacementRenderStep | `currentPart` | Placement render update | ObjectSelector |
+| Rotated | `orientation` | Placement rotation changed | ObjectSelector |
+| CreatedCurrentPart | None | New placement part set | ObjectSelector |
+| RemoveCurrentPart | None | Placement part removed | ObjectSelector |
+| Cursor | `action, data?` | Cursor state change | Various |
+| SearchViewports | `searchText` | Viewport search updated | ObjectSelector |
+| CloseViewports | None | Close all viewports | ObjectSelector |
+| OpenWithCategory | `category` | Open category viewports | ObjectSelector |
+| CreateDockButton | `config` | Create dock button | Various |
+| EditToolOpened | None | Edit tool opened | EditTool |
+| EditToolClosed | None | Edit tool closed | EditTool |
+| ConfigWindowOpened | None | Config window opened | EditTool |
+| EditSelectorState | `enabled` | Edit selector state | PropertyValueItem |
+| Ponder | `action, data` | Ponder tutorial action | ObjectSelector/viewport |
+| GamepadConnected | None | Gamepad connected | ConsoleSupport |
+| GamepadDisconnected | None | Gamepad disconnected | ConsoleSupport |
+| SetKeycodeRotation | `axis, keycode` | Set rotation keycode | ConsoleSupport |
+| SetPlacingKeycode | `keycode` | Set placement keycode | ConsoleSupport |
+| NewBlockCategory | `category` | New block category added | ObjectSelector |
+
+## See Also
+
+- [Construct API](/modding/construct-api)
+- [Signal Class](/classes/signal)
+- [Vision Framework](/modding/vision-framework)
+- [Plugin Development](/modding/plugin-development)

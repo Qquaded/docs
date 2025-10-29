@@ -1,0 +1,468 @@
+---
+title: "Snap"
+description: "Advanced snapping and positioning library for block placement and alignment"
+---
+
+<Badge>Shared</Badge>
+
+## Description
+
+The Snap library provides comprehensive snapping functionality used throughout Construct for precise block placement, surface alignment, and collision detection. It handles grid-based positioning, surface normal calculations, camera-aware placement, and collision avoidance.
+
+## Basic Usage
+
+```lua
+local snap = require(ReplicatedStorage.Shared.Libraries.snap)
+
+-- Simple grid snapping
+local snappedPosition = snap.snapNumber(5.7, 2.5) -- Returns 6.0
+
+-- Vector snapping
+local snappedVector = snap.roundVector3(Vector3.new(1.23, 4.56, 7.89), 2)
+```
+
+## Core Functions
+
+### Number Snapping
+
+#### snapNumber(n: number, snapAmount: number, origin: number?, offset: number?)
+Snaps a number to the nearest grid point.
+
+**Parameters:**
+- `n` (number): Number to snap
+- `snapAmount` (number): Grid size
+- `origin` (number, optional): Grid origin (default: 0)
+- `offset` (number, optional): Grid offset (default: snapAmount/2)
+
+**Returns:** Snapped number
+
+**Example:**
+```lua
+local snapped = snap.snapNumber(5.7, 2.5) -- Returns 6.0
+local snapped = snap.snapNumber(5.7, 2.5, 0, 1.25) -- Returns 5.0
+```
+
+#### roundNumber(n: number, decimalPlaces: number)
+Rounds a number to specified decimal places.
+
+**Parameters:**
+- `n` (number): Number to round
+- `decimalPlaces` (number): Decimal places to keep
+
+**Returns:** Rounded number
+
+**Example:**
+```lua
+local rounded = snap.roundNumber(3.14159, 2) -- Returns 3.14
+```
+
+### Vector Operations
+
+#### roundVector3(v: Vector3, decimalPlaces: number)
+Rounds each component of a Vector3 to specified decimal places.
+
+**Parameters:**
+- `v` (Vector3): Vector to round
+- `decimalPlaces` (number): Decimal places to keep
+
+**Returns:** Rounded Vector3
+
+**Example:**
+```lua
+local rounded = snap.roundVector3(Vector3.new(1.234, 5.678, 9.012), 2)
+-- Returns Vector3.new(1.23, 5.68, 9.01)
+```
+
+#### ceilVector3(v: Vector3, decimalPlaces: number)
+Ceils each component of a Vector3 with proper sign handling.
+
+**Parameters:**
+- `v` (Vector3): Vector to ceil
+- `decimalPlaces` (number): Decimal places
+
+**Returns:** Ceiled Vector3
+
+**Example:**
+```lua
+local ceiled = snap.ceilVector3(Vector3.new(1.1, -2.3, 3.7), 0)
+-- Returns Vector3.new(2, -2, 4)
+```
+
+#### absVector3(v: Vector3)
+Returns the absolute value of each component.
+
+**Parameters:**
+- `v` (Vector3): Input vector
+
+**Returns:** Absolute Vector3
+
+**Example:**
+```lua
+local abs = snap.absVector3(Vector3.new(1, -2, 3))
+-- Returns Vector3.new(1, 2, 3)
+```
+
+### Surface and Edge Calculations
+
+#### distanceToEdge(partSize: Vector3, partCFrame: CFrame, position: Vector3, direction: Vector3)
+Calculates distance from a position to the edge of a part in a given direction.
+
+**Parameters:**
+- `partSize` (Vector3): Size of the part
+- `partCFrame` (CFrame): CFrame of the part
+- `position` (Vector3): Test position
+- `direction` (Vector3): Direction to check
+
+**Returns:** Distance to edge
+
+**Example:**
+```lua
+local distance = snap.distanceToEdge(
+    part.Size,
+    part.CFrame,
+    testPosition,
+    Vector3.new(0, 1, 0) -- Up direction
+)
+```
+
+#### projectPointToPartBounds(partSize: Vector3, partCFrame: CFrame, position: Vector3, direction: Vector3)
+Projects a point onto the bounds of a part.
+
+**Parameters:**
+- `partSize` (Vector3): Size of the part
+- `partCFrame` (CFrame): CFrame of the part
+- `position` (Vector3): Point to project
+- `direction` (Vector3): Projection direction
+
+**Returns:** Projected position
+
+**Example:**
+```lua
+local projected = snap.projectPointToPartBounds(
+    part.Size,
+    part.CFrame,
+    mousePosition,
+    camera.CFrame.LookVector
+)
+```
+
+### Advanced Snapping
+
+#### Snap(raycastResult: RaycastResult, snapAmount: Vector3, gridOrigin: Vector3?, blockSize: Vector3, blockCFrame: CFrame, blockType: Enum.PartType?)
+Performs complex snapping calculation for block placement.
+
+**Parameters:**
+- `raycastResult` (RaycastResult): Raycast hit result
+- `snapAmount` (Vector3): Snap grid size
+- `gridOrigin` (Vector3, optional): Grid origin
+- `blockSize` (Vector3): Size of block being placed
+- `blockCFrame` (CFrame): CFrame of block being placed
+- `blockType` (Enum.PartType, optional): Part type for collision
+
+**Returns:** Snapped position as Vector3
+
+**Example:**
+```lua
+local raycast = workspace:Raycast(camera.CFrame.Position, direction, params)
+if raycast then
+    local snappedPos = snap:Snap(
+        raycast,
+        Vector3.new(2.5, 2.5, 2.5), -- Grid size
+        Vector3.zero, -- Grid origin
+        block.Size,
+        block.CFrame
+    )
+    block.Position = snappedPos
+end
+```
+
+#### SnapOld(hitPosition: Vector3, snapAmount: number, blockSize: Vector3, hitSurfaceNormal: Vector3, gridOrigin: Vector3?, partCFrame: CFrame)
+Legacy snapping function for backward compatibility.
+
+**Parameters:**
+- `hitPosition` (Vector3): Hit position
+- `snapAmount` (number): Snap amount
+- `blockSize` (Vector3): Block size
+- `hitSurfaceNormal` (Vector3): Surface normal
+- `gridOrigin` (Vector3, optional): Grid origin
+- `partCFrame` (CFrame): Part CFrame
+
+**Returns:** Snapped position
+
+#### ServerSnap(raycastResult: RaycastResult, snapAmount: Vector3, gridOrigin: Vector3?, blockSize: Vector3, blockCFrame: CFrame, blockType: Enum.PartType?, cameraCF: CFrame)
+Server-side snapping with camera awareness.
+
+**Parameters:**
+- `raycastResult` (RaycastResult): Raycast result
+- `snapAmount` (Vector3): Snap grid
+- `gridOrigin` (Vector3, optional): Grid origin
+- `blockSize` (Vector3): Block size
+- `blockCFrame` (CFrame): Block CFrame
+- `blockType` (Enum.PartType, optional): Part type
+- `cameraCF` (CFrame): Camera CFrame
+
+**Returns:** Snapped position
+
+#### ServerSnapSimple(position: Vector3, snapAmount: number, gridOrigin: Vector3?)
+Simple server-side grid snapping.
+
+**Parameters:**
+- `position` (Vector3): Position to snap
+- `snapAmount` (number): Snap amount
+- `gridOrigin` (Vector3, optional): Grid origin
+
+**Returns:** Snapped position
+
+### Collision Detection
+
+#### GetPartsInBox(boxCFrame: CFrame, boxSize: Vector3, params: OverlapParams?)
+Gets all parts within a box for collision detection.
+
+**Parameters:**
+- `boxCFrame` (CFrame): Box center and orientation
+- `boxSize` (Vector3): Box size
+- `params` (OverlapParams, optional): Overlap parameters
+
+**Returns:** Array of BasePart objects
+
+**Example:**
+```lua
+local parts = snap.GetPartsInBox(
+    CFrame.new(position),
+    Vector3.new(5, 5, 5),
+    OverlapParams.new()
+)
+```
+
+### Camera and Viewport Utilities
+
+#### GetVector3Directions(vector: Vector3)
+Converts a vector to direction indicators (-1, 0, 1).
+
+**Parameters:**
+- `vector` (Vector3): Input vector
+
+**Returns:** Direction vector with -1, 0, 1 components
+
+**Example:**
+```lua
+local directions = snap.GetVector3Directions(Vector3.new(1, -0.5, 0))
+-- Returns Vector3.new(1, -1, 0)
+```
+
+#### GetDirectionDistance(camVector: Vector3, directions: Vector3)
+Calculates distance between camera vector and direction vectors.
+
+**Parameters:**
+- `camVector` (Vector3): Camera direction vector
+- `directions` (Vector3): Target directions
+
+**Returns:** Distance vector
+
+#### GetLowestValue(vector: Vector3)
+Returns the component with the lowest absolute value.
+
+**Parameters:**
+- `vector` (Vector3): Input vector
+
+**Returns:** Vector with only the lowest component
+
+**Example:**
+```lua
+local lowest = snap.GetLowestValue(Vector3.new(3, 1, 2))
+-- Returns Vector3.new(0, 1, 0)
+```
+
+### Mouse Casting
+
+#### MouseCast(distance: number)
+Performs a raycast from the mouse position.
+
+**Parameters:**
+- `distance` (number): Maximum cast distance
+
+**Returns:** RaycastResult or nil
+
+**Example:**
+```lua
+local result = snap:MouseCast(1000)
+if result then
+    print("Hit:", result.Instance.Name, "at", result.Position)
+end
+```
+
+## Integration with Construct Systems
+
+### ObjectSelector Integration
+
+The ObjectSelector uses Snap extensively for block placement:
+
+```lua
+-- From ObjectSelector/init.lua
+local mouseposition1 = UserInputService:GetMouseLocation()
+local Camera = workspace.CurrentCamera
+local raycastdistance = 10000
+local raycastparameters = RaycastParams.new()
+
+local mouseray = Camera:ViewportPointToRay(mouseposition1.X, mouseposition1.y)
+local Raycastresult = workspace:Raycast(mouseray.Origin, mouseray.Direction * raycastdistance, raycastparameters)
+
+if Raycastresult then
+    local pos = snap:SnapOld(
+        Raycastresult.Position,
+        currentGrid,
+        CurrentPart:GetExtentsSize(),
+        Raycastresult.Normal,
+        Vector3.zero,
+        CurrentPart:GetPivot()
+    )
+    -- Position the block
+end
+```
+
+### Grid System
+
+Snap provides the foundation for Construct's grid-based building:
+
+```lua
+-- Dynamic grid sizing
+local function getGrid()
+    local grid = 2.5
+    if disableGridState then
+        grid = 0.01 -- Effectively disabled
+    else
+        grid = 2.5 * shared.BlockSettings.Scale
+    end
+    return grid
+end
+
+currentGrid = getGrid()
+```
+
+### Collision Avoidance
+
+Snap handles collision detection to prevent block overlap:
+
+```lua
+local BoxCF = CFrame.new(GridPos) * BlockCframe.Rotation
+local Params = OverlapParams.new()
+Params.FilterDescendantsInstances = {CurrentPart}
+Params.RespectCanCollide = false
+Params.FilterType = Enum.RaycastFilterType.Exclude
+Params.CollisionGroup = "PartBounds"
+
+local InBounds = snap.GetPartsInBox(BoxCF, BlockSize, Params)
+if InBounds and #InBounds > 0 then
+    -- Find next available position
+    repeat
+        GridPos = GridPos + SnapAmount * MoveDirection
+        BoxCF = CFrame.new(GridPos) * BlockCframe.Rotation
+        InBounds = snap.GetPartsInBox(BoxCF, BlockSize, Params)
+    until not (InBounds and #InBounds > 0)
+end
+```
+
+## Advanced Usage Patterns
+
+### Custom Snapping Logic
+
+```lua
+function customSnap(position, normal, gridSize)
+    -- Custom surface alignment
+    if normal.Y > 0.9 then
+        -- Floor snapping
+        return snap.snapNumber(position.Y, gridSize, 0, gridSize/2)
+    elseif normal.Y < -0.9 then
+        -- Ceiling snapping
+        return snap.snapNumber(position.Y, gridSize, 0, -gridSize/2)
+    else
+        -- Wall snapping
+        local snappedX = snap.snapNumber(position.X, gridSize)
+        local snappedZ = snap.snapNumber(position.Z, gridSize)
+        return Vector3.new(snappedX, position.Y, snappedZ)
+    end
+end
+```
+
+### Multi-Level Snapping
+
+```lua
+function multiLevelSnap(position, levels)
+    local bestSnap = position
+    local minDistance = math.huge
+
+    for _, level in ipairs(levels) do
+        local snapped = snap.snapNumber(position, level.grid)
+        local distance = math.abs(position - snapped)
+
+        if distance < minDistance then
+            minDistance = distance
+            bestSnap = snapped
+        end
+    end
+
+    return bestSnap
+end
+
+-- Usage with multiple grid sizes
+local position = multiLevelSnap(hit.Position, {
+    {grid = 0.5, priority = 1},
+    {grid = 2.5, priority = 2},
+    {grid = 10, priority = 3}
+})
+```
+
+### Surface-Aware Placement
+
+```lua
+function surfaceAwarePlacement(hitResult, blockSize)
+    local position = hitResult.Position
+    local normal = hitResult.Normal
+
+    -- Calculate offset based on surface normal
+    local offset = normal * (blockSize / 2)
+
+    -- Snap to surface
+    local snappedPosition = snap:SnapOld(
+        position + offset,
+        2.5, -- grid size
+        blockSize,
+        normal,
+        Vector3.zero,
+        CFrame.new(position)
+    )
+
+    return snappedPosition - offset
+end
+```
+
+## Performance Considerations
+
+- **Caching**: Cache expensive calculations when possible
+- **Early returns**: Use early returns for invalid inputs
+- **Vector operations**: Prefer built-in vector operations over manual calculations
+- **Collision groups**: Use appropriate collision groups to reduce overlap checks
+
+## Error Handling
+
+```lua
+local function safeSnap(position, gridSize)
+    local success, result = pcall(function()
+        return snap.snapNumber(position, gridSize)
+    end)
+
+    if success then
+        return result
+    else
+        warn("Snap failed:", result)
+        return position -- Return original position on error
+    end
+end
+```
+
+## See Also
+
+- [ObjectSelector](/modding/object-selector)
+- [Atom System Launch](/modding/atom-system)
+- [Block Placement](/modding/block-placement)
+- [Grid System](/modding/grid-system)
